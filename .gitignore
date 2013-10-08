@@ -50,7 +50,7 @@ build.properties
 *.class
 
 # Package Files #
-*.jar
+#*.jar
 *.war
 *.ear
 
