@@ -50,7 +50,7 @@ build.properties
 *.class
 
 # Package Files #
-*.jar
+#*.jar
 *.war
 *.ear
 
@@ -72,7 +72,6 @@ var
 sdist
 develop-eggs
 .installed.cfg
-lib
 lib64
 __pycache__
 
