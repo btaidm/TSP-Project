@@ -70,16 +70,16 @@ public class GameView implements Listenable {
 	public void process(int ch) {
 		switch(ch) {
 		case BlackenKeys.KEY_DOWN:
-			this.model.attemptMove(new Point(1, 0));
+			this.model.attemptMove(new Point(0, 1));
 			break;
 		case BlackenKeys.KEY_UP:
-			this.model.attemptMove(new Point(-1, 0));
-			break;
-		case BlackenKeys.KEY_LEFT:
 			this.model.attemptMove(new Point(0, -1));
 			break;
+		case BlackenKeys.KEY_LEFT:
+			this.model.attemptMove(new Point(-1, 0));
+			break;
 		case BlackenKeys.KEY_RIGHT:
-			this.model.attemptMove(new Point(0, 1));
+			this.model.attemptMove(new Point(1, 0));
 			break;
 		}
 	}
