@@ -19,8 +19,8 @@ public class GameModel {
 	public static final String PLAYER = "@";
 	public static final String EMPTY_FLOOR = " ";
 	public static final String WALL = "#";
-	public static final String STAIR_UP = "S";
-	public static final String STAIR_DOWN = "D";
+	public static final String STAIR_UP = "\u25B2";
+	public static final String STAIR_DOWN = "\u25BC";
 
 	public GameModel() {
 		MapGenerator f = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
@@ -34,9 +34,6 @@ public class GameModel {
 		while (dungeon[(int)playerLocation.getZ()][(int)playerLocation.getX()][(int) playerLocation.getY()].equals(WALL)) {
 			playerLocation.move(r.nextInt(0, COLS), r.nextInt(0, ROWS));
 		}
-
-		System.out.println(playerLocation);
-		dungeon[(int) playerLocation.getZ()][(int) playerLocation.getX()][(int) playerLocation.getY()] = PLAYER;
 	}
 
 	public int dungeonRows() {
@@ -48,6 +45,9 @@ public class GameModel {
 	}
 
 	public String get(int i, int j, int z) {
+		if (j == playerLocation.getX() && i == playerLocation.getY() && z == playerLocation.getZ()) {
+			return PLAYER;
+		}
 		return this.dungeon[z][j][i];
 	}
 
@@ -66,15 +66,11 @@ public class GameModel {
 			int z = newPosition.getZ();
 			
 			if (this.dungeon[z][x][y].equals(EMPTY_FLOOR)) {
-				dungeon[playerLocation.getZ()][(int) playerLocation.getX()][(int) playerLocation.getY()] = EMPTY_FLOOR;
-				dungeon[z][x][y] = PLAYER;
 				playerLocation = newPosition;
-
 				return true;
 			} else if (this.dungeon[z][x][y].equals(STAIR_UP)) {
 				playerLocation = newPosition;
 				playerLocation.moveZ(1);
-				
 				return true;
 			} else if (this.dungeon[z][x][y].equals(STAIR_DOWN)) {
 				playerLocation = newPosition;
