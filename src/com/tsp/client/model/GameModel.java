@@ -7,68 +7,83 @@ import com.googlecode.blacken.core.Random;
 public class GameModel {
 
 	//Character and dungeon
-	Point playerLocation;
-	String[][] dungeon;
-	
+	Point3D playerLocation;
+	String[][][] dungeon;
+
 	//Dungeon properties
 	private final int ROWS = 24;
 	private final int COLS = 80;
-	
+	private final int FLOORS = 4;
+
 	//Game tile types
 	public static final String PLAYER = "@";
 	public static final String EMPTY_FLOOR = " ";
 	public static final String WALL = "#";
-	
+	public static final String STAIR_UP = "S";
+	public static final String STAIR_DOWN = "D";
+
 	public GameModel() {
-		FloorGenerator f = new FloorGenerator(WALL, EMPTY_FLOOR);
-		dungeon = f.GetFullMap(ROWS, COLS);
-		/*
-		for (int i = 0; i < dungeon.length; i++) {
-			for (int j = 0; j < dungeon[i].length; j++) {
-				dungeon[i][j] = EMPTY_FLOOR;
-			}
-		}
-		*/
-		
+		MapGenerator f = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
+		dungeon = f.getMap(FLOORS, ROWS, COLS);
+
 		//Choose a random location for the player
 		Random r = new Random();
-		playerLocation = new Point(r.nextInt(0, COLS), r.nextInt(0, ROWS));
-		while (dungeon[(int)playerLocation.getY()][(int)playerLocation.getX()].equals(WALL)) {
+		playerLocation = new Point3D(r.nextInt(0, COLS), r.nextInt(0, ROWS), r.nextInt(0, FLOORS));
+
+		System.out.println(playerLocation);
+		while (dungeon[(int)playerLocation.getZ()][(int)playerLocation.getX()][(int) playerLocation.getY()].equals(WALL)) {
 			playerLocation.move(r.nextInt(0, COLS), r.nextInt(0, ROWS));
 		}
-		
+
 		System.out.println(playerLocation);
-		dungeon[(int) playerLocation.getY()][(int) playerLocation.getX()] = PLAYER;
+		dungeon[(int) playerLocation.getZ()][(int) playerLocation.getX()][(int) playerLocation.getY()] = PLAYER;
 	}
-	
+
 	public int dungeonRows() {
 		return ROWS;
 	}
-	
+
 	public int dungeonCols() {
 		return COLS;
 	}
-	
-	public String get(int i, int j) {
-		return this.dungeon[i][j];
+
+	public String get(int i, int j, int z) {
+		return this.dungeon[z][j][i];
 	}
-	
+
+	public int getCurrentLevel() {
+		return this.playerLocation.getZ();
+	}
+
 	public boolean attemptMove(Point delta) {
-		Point newPosition = (Point) playerLocation.clone();
+		Point3D newPosition = (Point3D) playerLocation.clone();
 		newPosition.translate((int)delta.getX(), (int)delta.getY());
-		
-		// Verify the new point is inside the map
-		if (newPosition.getY() >= 0 && newPosition.getY() < 24 && 
-			newPosition.getX() >= 0 && newPosition.getX() < 80 &&
-			this.dungeon[(int)newPosition.getY()][(int)newPosition.getX()].equals(EMPTY_FLOOR)) {
+
+		// Verify the new Point3D is inside the map
+		if (newPosition.getY() >= 0 && newPosition.getY() < 24 && newPosition.getX() >= 0 && newPosition.getX() < 80) {
+			int x = (int) newPosition.getX();
+			int y = (int) newPosition.getY();
+			int z = newPosition.getZ();
 			
-			dungeon[(int) playerLocation.getY()][(int) playerLocation.getX()] = EMPTY_FLOOR;
-			dungeon[(int) newPosition.getY()][(int) newPosition.getX()] = PLAYER;
-			playerLocation = newPosition;
-			
-			return true;
+			if (this.dungeon[z][x][y].equals(EMPTY_FLOOR)) {
+				dungeon[playerLocation.getZ()][(int) playerLocation.getX()][(int) playerLocation.getY()] = EMPTY_FLOOR;
+				dungeon[z][x][y] = PLAYER;
+				playerLocation = newPosition;
+
+				return true;
+			} else if (this.dungeon[z][x][y].equals(STAIR_UP)) {
+				playerLocation = newPosition;
+				playerLocation.moveZ(1);
+				
+				return true;
+			} else if (this.dungeon[z][x][y].equals(STAIR_DOWN)) {
+				playerLocation = newPosition;
+				playerLocation.moveZ(-1);
+				return true;
+			} else {
+				// Do nothing here
+			}
 		}
-		
 		return false;
 	}
 }
