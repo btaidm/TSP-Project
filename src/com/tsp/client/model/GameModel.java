@@ -1,4 +1,4 @@
-package client.model;
+package com.tsp.client.model;
 
 import java.awt.Point;
 

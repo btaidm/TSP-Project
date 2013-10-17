@@ -1,4 +1,4 @@
-package client.event;
+package com.tsp.client.event;
 
 
 
