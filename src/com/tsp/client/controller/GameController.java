@@ -1,7 +1,7 @@
-package client.controller;
+package com.tsp.client.controller;
 
-import client.event.GameEvent;
-import client.event.GameListener;
+import com.tsp.client.event.GameEvent;
+import com.tsp.client.event.GameListener;
 
 public class GameController implements GameListener {
 
@@ -10,6 +10,8 @@ public class GameController implements GameListener {
 		switch(e.type) {
 		case TURN_END:
 			processTick();
+		case TURN_MOVE:
+
 		default:
 			break;
 		}

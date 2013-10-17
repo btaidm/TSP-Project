@@ -1,4 +1,4 @@
-package packets;
+package com.tsp.packets;
 
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
