@@ -10,7 +10,7 @@ public class FloorGenerator {
 	String wall;
 	String floor;
 	
-	public FloorGenerator(String wall, String floor){
+	public FloorGenerator(String wall, String floor) {
 		this.wall = wall;
 		this.floor = floor;
 	}

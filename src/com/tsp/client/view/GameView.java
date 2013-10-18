@@ -64,12 +64,14 @@ public class GameView implements Listenable
 		this.curses.clear();
 		this.curses.setCursorLocation(-1, -1);
 
+		int zLevel = this.model.getCurrentLevel();
+		
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.dungeonRows(); i++)
 		{
 			for (int j = 0; j < this.model.dungeonCols(); j++)
 			{
-				this.term.set(i, j, this.model.get(i, j), 255, 0);
+				this.term.set(i, j, this.model.get(i, j, zLevel), 255, 0);
 			}
 		}
 		this.curses.refresh();
@@ -80,6 +82,7 @@ public class GameView implements Listenable
 		switch (ch)
 		{
 			case BlackenKeys.KEY_DOWN:
+			case 'j':
 				if (this.model.attemptMove(new Point(0, 1)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
@@ -90,6 +93,7 @@ public class GameView implements Listenable
 				}
 				break;
 			case BlackenKeys.KEY_UP:
+			case 'k':
 				if (this.model.attemptMove(new Point(0, -1)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
@@ -100,6 +104,7 @@ public class GameView implements Listenable
 				}
 				break;
 			case BlackenKeys.KEY_LEFT:
+			case 'h':
 				if (this.model.attemptMove(new Point(-1, 0)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
@@ -110,6 +115,7 @@ public class GameView implements Listenable
 				}
 				break;
 			case BlackenKeys.KEY_RIGHT:
+			case 'l':
 				if (this.model.attemptMove(new Point(1, 0)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
