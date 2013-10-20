@@ -83,47 +83,59 @@ public class GameView implements Listenable
 		{
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
-				if (this.model.attemptMove(new Point(0, 1)))
+				if (this.model.attemptMove(GameModel.DOWN))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(0));
-					movement.put("Y", new Integer(1));
+					movement.put("X", GameModel.DOWN.x);
+					movement.put("Y", GameModel.DOWN.y);
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;
 			case BlackenKeys.KEY_UP:
 			case 'k':
-				if (this.model.attemptMove(new Point(0, -1)))
+				if (this.model.attemptMove(GameModel.UP))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(0));
-					movement.put("Y", new Integer(-1));
+					movement.put("X", GameModel.UP.x);
+					movement.put("Y", GameModel.UP.y);
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;
 			case BlackenKeys.KEY_LEFT:
 			case 'h':
-				if (this.model.attemptMove(new Point(-1, 0)))
+				if (this.model.attemptMove(GameModel.LEFT))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(-1));
-					movement.put("Y", new Integer(0));
+					movement.put("X", GameModel.LEFT.x);
+					movement.put("Y", GameModel.LEFT.y);
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;
 			case BlackenKeys.KEY_RIGHT:
 			case 'l':
-				if (this.model.attemptMove(new Point(1, 0)))
+				if (this.model.attemptMove(GameModel.RIGHT))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(1));
-					movement.put("Y", new Integer(0));
+					movement.put("X", GameModel.RIGHT.x);
+					movement.put("Y", GameModel.RIGHT.y);
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
+				break;
+			case 'a':
+				this.model.attemptAttack(GameModel.LEFT);
+				break;
+			case 'd':
+				this.model.attemptAttack(GameModel.RIGHT);
+				break;
+			case 's':
+				this.model.attemptAttack(GameModel.DOWN);
+				break;
+			case 'w':
+				this.model.attemptAttack(GameModel.UP);
 				break;
 		}
 	}
