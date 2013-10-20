@@ -1,4 +1,4 @@
-package com.tsp.client.model;
+package com.tsp.game.map;
 
 import java.util.*;
 

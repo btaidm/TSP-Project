@@ -3,7 +3,6 @@ package com.tsp.client.view;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Properties;
 
 import com.tsp.client.event.EventType;
 import com.tsp.client.event.GameListener;
@@ -16,6 +15,7 @@ import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
 import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
+import com.tsp.game.map.Point3D;
 
 public class GameView implements Listenable
 {
@@ -23,8 +23,9 @@ public class GameView implements Listenable
 	SwingTerminal term;
 	CursesLikeAPI curses;
 	GameModel model;
-
+	boolean quit = false;
 	ArrayList<GameListener> listeners;
+	private int id;
 
 	public GameView(GameModel model)
 	{
@@ -49,7 +50,7 @@ public class GameView implements Listenable
 	{
 		// Main loop of the game happens here
 		int ch = BlackenKeys.NO_KEY;
-		while (true)
+		while (!quit)
 		{
 			ch = this.curses.getch();
 			process(ch);
@@ -57,6 +58,8 @@ public class GameView implements Listenable
 
 			fireEvent(EventType.TURN_END, new HashMap<String, Object>());
 		}
+		curses.quit();
+		term.quit();
 	}
 
 	public void refresh()
@@ -71,7 +74,12 @@ public class GameView implements Listenable
 		{
 			for (int j = 0; j < this.model.dungeonCols(); j++)
 			{
-				this.term.set(i, j, this.model.get(i, j, zLevel), 255, 0);
+				int color = 255;
+				if(this.model.getPlayerLocation().equals(new Point3D(j,i,zLevel)))
+				{
+					color = 255 / 2;
+				}
+				this.term.set(i, j, this.model.get(i, j, zLevel), color, 0);
 			}
 		}
 		this.curses.refresh();
@@ -81,14 +89,18 @@ public class GameView implements Listenable
 	{
 		switch (ch)
 		{
+			case BlackenKeys.KEY_ESCAPE:
+				quit = true;
+				break;
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
 				if (this.model.attemptMove(new Point(0, 1)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(0));
-					movement.put("Y", new Integer(1));
+					movement.put("ID", id);
+					movement.put("X", 0);
+					movement.put("Y", 1);
+					movement.put("Z", model.getCurrentLevel());
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;
@@ -97,9 +109,10 @@ public class GameView implements Listenable
 				if (this.model.attemptMove(new Point(0, -1)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(0));
-					movement.put("Y", new Integer(-1));
+					movement.put("ID", 0);
+					movement.put("X", 0);
+					movement.put("Y", -1);
+					movement.put("Z", model.getCurrentLevel());
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;
@@ -108,9 +121,10 @@ public class GameView implements Listenable
 				if (this.model.attemptMove(new Point(-1, 0)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(-1));
-					movement.put("Y", new Integer(0));
+					movement.put("ID", 0);
+					movement.put("X", -1);
+					movement.put("Y", 0);
+					movement.put("Z", model.getCurrentLevel());
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;
@@ -119,9 +133,10 @@ public class GameView implements Listenable
 				if (this.model.attemptMove(new Point(1, 0)))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", new Integer(1));
-					movement.put("Y", new Integer(0));
+					movement.put("ID", 0);
+					movement.put("X", 1);
+					movement.put("Y", 0);
+					movement.put("Z", model.getCurrentLevel());
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
 				break;

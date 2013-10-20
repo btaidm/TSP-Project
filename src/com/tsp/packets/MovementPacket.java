@@ -1,5 +1,6 @@
 package com.tsp.packets;
 
+import com.tsp.packets.Packet;
 import org.json.simple.JSONObject;
 
 /**
@@ -14,11 +15,12 @@ public class MovementPacket extends Packet
 	Integer m_playerID;
 	Integer m_moveX;
 	Integer m_moveY;
+	Integer m_moveZ;
 	Boolean m_attack;
 	Integer m_attackX;
 	Integer m_attackY;
 
-	public MovementPacket(Integer _packetID, Integer m_playerID, Integer m_moveX, Integer m_moveY, Boolean m_attack, Integer m_attackX, Integer m_attackY)
+	public MovementPacket(Integer _packetID, Integer m_playerID, Integer m_moveX, Integer m_moveY, Integer m_moveZ, Boolean m_attack, Integer m_attackX, Integer m_attackY)
 	{
 		super(_packetID);
 		this.m_playerID = m_playerID;
@@ -27,10 +29,11 @@ public class MovementPacket extends Packet
 		this.m_attack = m_attack;
 		this.m_attackX = m_attackX;
 		this.m_attackY = m_attackY;
+		this.m_moveZ = m_moveZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
-	public MovementPacket( Integer m_playerID, Integer m_moveX, Integer m_moveY, Boolean m_attack, Integer m_attackX, Integer m_attackY)
+	public MovementPacket( Integer m_playerID, Integer m_moveX, Integer m_moveY, Integer m_moveZ, Boolean m_attack, Integer m_attackX, Integer m_attackY)
 	{
 		super();
 		this.m_playerID = m_playerID;
@@ -39,6 +42,7 @@ public class MovementPacket extends Packet
 		this.m_attack = m_attack;
 		this.m_attackX = m_attackX;
 		this.m_attackY = m_attackY;
+		this.m_moveZ = m_moveZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
@@ -51,6 +55,7 @@ public class MovementPacket extends Packet
 		jb.put("playerID",m_playerID);
 		jb.put("moveX",m_moveX);
 		jb.put("moveY",m_moveY);
+		jb.put("moveZ",m_moveZ);
 		jb.put("attack",m_attack);
 		jb.put("attackX",m_attackX);
 		jb.put("attackY",m_attackY);

@@ -4,7 +4,6 @@ import com.tsp.client.event.GameEvent;
 import com.tsp.client.event.GameListener;
 import com.tsp.packets.MovementPacket;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +59,7 @@ public class ConnectionController implements GameListener
 		array.add(new MovementPacket((Integer) e.payload.get("ID"),
 		                             (Integer) e.payload.get("X"),
 		                             (Integer) e.payload.get("Y"),
+		                             (Integer) e.payload.get("Z"),
 		                             false,
 		                             0,
 		                             0));

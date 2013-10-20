@@ -3,6 +3,8 @@ package com.tsp.client.model;
 import java.awt.Point;
 
 import com.googlecode.blacken.core.Random;
+import com.tsp.game.map.MapGenerator;
+import com.tsp.game.map.Point3D;
 
 public class GameModel {
 
@@ -23,6 +25,7 @@ public class GameModel {
 	public static final String STAIR_DOWN = "\u25BC";
 
 	public GameModel() {
+
 		MapGenerator f = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		dungeon = f.getMap(FLOORS, ROWS, COLS);
 
@@ -34,6 +37,27 @@ public class GameModel {
 		while (dungeon[(int)playerLocation.getZ()][(int)playerLocation.getX()][(int) playerLocation.getY()].equals(WALL)) {
 			playerLocation.move(r.nextInt(0, COLS), r.nextInt(0, ROWS));
 		}
+	}
+
+	public GameModel(String[][][] _dungeon) {
+		dungeon = _dungeon;
+
+		//Choose a random location for the player
+		Random r = new Random();
+		playerLocation = new Point3D(r.nextInt(0, COLS), r.nextInt(0, ROWS), r.nextInt(0, FLOORS));
+
+		System.out.println(playerLocation);
+		while (dungeon[(int)playerLocation.getZ()][(int)playerLocation.getX()][(int) playerLocation.getY()].equals(WALL)) {
+			playerLocation.move(r.nextInt(0, COLS), r.nextInt(0, ROWS));
+		}
+	}
+
+	public GameModel(String[][][] _dungeon, Point3D _playerLocation) {
+		dungeon = _dungeon;
+
+		playerLocation = _playerLocation;
+
+		System.out.println(playerLocation);
 	}
 
 	public int dungeonRows() {
@@ -81,5 +105,10 @@ public class GameModel {
 			}
 		}
 		return false;
+	}
+
+	public Point3D getPlayerLocation()
+	{
+		return playerLocation;
 	}
 }

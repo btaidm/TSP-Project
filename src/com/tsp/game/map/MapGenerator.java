@@ -1,4 +1,4 @@
-package com.tsp.client.model;
+package com.tsp.game.map;
 
 import com.googlecode.blacken.core.Random;
 
