@@ -8,6 +8,11 @@ public class GameModel {
 
 	//Character and dungeon
 	Point3D playerLocation;
+	Point3D attackLocation;
+	String attackAnimation = "-";
+	int attackCounter = 0;
+	private final int ATTACK_COUNTER_MAX = 1;
+	
 	String[][][] dungeon;
 
 	//Dungeon properties
@@ -15,6 +20,12 @@ public class GameModel {
 	private final int COLS = 80;
 	private final int FLOORS = 4;
 
+	//Points corresponding to directions
+	public static final Point LEFT = new Point(-1, 0);
+	public static final Point RIGHT = new Point(1, 0);
+	public static final Point UP = new Point(0, -1);
+	public static final Point DOWN = new Point(0, 1);
+	
 	//Game tile types
 	public static final String PLAYER = "@";
 	public static final String EMPTY_FLOOR = " ";
@@ -47,6 +58,8 @@ public class GameModel {
 	public String get(int i, int j, int z) {
 		if (j == playerLocation.getX() && i == playerLocation.getY() && z == playerLocation.getZ()) {
 			return PLAYER;
+		} else if (attackLocation != null && j == attackLocation.getX() && i == attackLocation.getY() && z == attackLocation.getZ()) {
+			return attackAnimation;
 		}
 		return this.dungeon[z][j][i];
 	}
@@ -59,8 +72,16 @@ public class GameModel {
 		Point3D newPosition = (Point3D) playerLocation.clone();
 		newPosition.translate((int)delta.getX(), (int)delta.getY());
 
+		if (attackCounter > 0) {
+			attackCounter--;
+			return false;
+		}
+		
+		// On every attempted move we want to be able to clear the attack
+		clearAttack();
+		
 		// Verify the new Point3D is inside the map
-		if (newPosition.getY() >= 0 && newPosition.getY() < 24 && newPosition.getX() >= 0 && newPosition.getX() < 80) {
+		if (inBounds(newPosition)) {
 			int x = (int) newPosition.getX();
 			int y = (int) newPosition.getY();
 			int z = newPosition.getZ();
@@ -81,5 +102,41 @@ public class GameModel {
 			}
 		}
 		return false;
+	}
+	
+	public boolean attemptAttack(Point delta) {
+		Point3D newPosition = (Point3D) playerLocation.clone();
+		newPosition.translate(delta.x, delta.y);
+		
+		int x = newPosition.x;
+		int y = newPosition.y;
+		int z = newPosition.getZ();
+		
+		if (attackCounter > 0) {
+			attackCounter--;
+			return false;
+		}
+		
+		if (inBounds(newPosition) && this.dungeon[z][x][y].equals(EMPTY_FLOOR)) {
+			attackLocation = newPosition;
+			attackCounter = ATTACK_COUNTER_MAX;
+			
+			//Calculate the attack animation
+			if (delta.equals(UP) || delta.equals(DOWN))
+				attackAnimation = "|";
+			else
+				attackAnimation = "-";
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public void clearAttack() {
+		attackLocation = null;
+	}
+	
+	private boolean inBounds(Point p) {
+		return p.y >= 0 && p.y < ROWS && p.x >= 0 && p.x < COLS;
 	}
 }
