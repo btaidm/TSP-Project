@@ -19,6 +19,11 @@ public class UDPServer extends Thread
 {
 	ServerModel model;
 
+	public UDPServer(ServerModel serverModel)
+	{
+		this.model = serverModel;
+	}
+
 	@Override
 	public void run()
 	{
@@ -31,7 +36,7 @@ public class UDPServer extends Thread
 			{
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				serverSocket.receive(receivePacket);
-				new Thread(new RespondeWorker(serverSocket, receivePacket)).start();
+				new Thread(new RespondeWorker(serverSocket, receivePacket, model)).start();
 			}
 		}
 		catch (SocketException e)

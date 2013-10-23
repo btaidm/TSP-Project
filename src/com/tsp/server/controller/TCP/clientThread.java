@@ -1,10 +1,18 @@
 package com.tsp.server.controller.TCP;
 
+import com.tsp.game.actors.Actor;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,6 +31,10 @@ class clientThread extends Thread
 	private final clientThread[] threads;
 	private int maxClientsCount;
 	private ServerModel serverModel = null;
+	private Integer playerID;
+	Queue<Packet> outGoingPackets;
+	private boolean running = true;
+
 
 	private String BytesToString(byte[] bytes) throws IOException
 	{
@@ -38,9 +50,24 @@ class clientThread extends Thread
 		return str.toString();
 	}
 
+	public void addOutGoingPacket(Packet packet)
+	{
+		synchronized (this)
+		{
+			for (int i = 0; i < maxClientsCount; i++)
+			{
+				if (threads[i] != null)
+				{
+					outGoingPackets.add(packet);
+				}
+			}
+
+		}
+	}
 
 	public clientThread(Socket clientSocket, clientThread[] threads, ServerModel sm)
 	{
+		this.outGoingPackets = new LinkedList<Packet>();
 		this.clientSocket = clientSocket;
 		this.threads = threads;
 		maxClientsCount = threads.length;
@@ -51,9 +78,9 @@ class clientThread extends Thread
 	{
 		int maxClientsCount = this.maxClientsCount;
 		clientThread[] threads = this.threads;
-
 		try
 		{
+			clientSocket.setSoTimeout(100);
 		   /*
 		    * Create input and output streams for this client.
 	        */
@@ -77,28 +104,73 @@ class clientThread extends Thread
 						break;
 					}
 				}
-
-				Integer playerID = new Integer(serverModel.addPlayer(PlayName));
+				playerID = serverModel.addPlayer(PlayName);
 				os.writeInt(playerID);
+				sendDungeon(serverModel.getDungeon());
+				sendActors();
 			}
 
+
+
 		    /* Start the conversation. */
-			while (true)
+			while (running)
 			{
+				processIncoming();
+				processPackets();
+				this.wait(10);
 				break;
 			}
 
-			quit();
 		}
 		catch (IOException e)
 		{
+			e.printStackTrace();
+
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				quit();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void processIncoming() throws IOException
+	{
+		String json = is.readUTF();
+		Object object = JSONValue.parse(json);
+		if (object != null && object instanceof JSONObject)
+		{
+			Packet packet = Packet.parseJSONObject((JSONObject) object);
+			if (packet.getPacketType() == Packet.PacketType.QUITPACKET)
+				running = false;
+		}
+	}
+
+	private void processPackets() throws IOException
+	{
+		synchronized (this)
+		{
+			while (!outGoingPackets.isEmpty())
+			{
+				os.writeUTF(outGoingPackets.poll().toJSONString());
+			}
 		}
 	}
 
 	public void quit() throws IOException
 	{
 		/*
-       * Clean up. Set the current thread variable to null so that a new client
+	   * Clean up. Set the current thread variable to null so that a new client
        * could be accepted by the server.
        */
 		synchronized (this)
@@ -111,12 +183,23 @@ class clientThread extends Thread
 				}
 			}
 		}
-      /*
-       * Close the output stream, close the input stream, close the socket.
+	  /*
+	   * Close the output stream, close the input stream, close the socket.
        */
 		is.close();
 		os.close();
 		clientSocket.close();
+	}
+
+	private void sendDungeon(String[][][] strings) throws IOException
+	{
+		os.writeInt(serverModel.getColumns());
+		os.writeInt(serverModel.getRows());
+		os.writeInt(serverModel.getFloors());
+		for (int z = 0; z < serverModel.getFloors(); z++)
+			for (int x = 0; x < serverModel.getColumns(); x++)
+				for (int y = 0; y < serverModel.getRows(); y++)
+					os.writeUTF(strings[x][y][z]);
 	}
 
 	private void sendBytes(byte[] myByteArray) throws IOException
@@ -126,15 +209,37 @@ class clientThread extends Thread
 
 	private void sendBytes(byte[] myByteArray, int start, int length) throws IOException
 	{
-		if(length < 0)
-			throw new  IllegalArgumentException("Negative length not allowed");
-		if(start < 0 || start >= myByteArray.length)
+		if (length < 0)
+			throw new IllegalArgumentException("Negative length not allowed");
+		if (start < 0 || start >= myByteArray.length)
 			throw new IndexOutOfBoundsException("Out of Bounds: " + start);
 
 		os.writeInt(length);
-		if(length > 0)
+		if (length > 0)
 		{
-			os.write(myByteArray,start,length);
+			os.write(myByteArray, start, length);
+		}
+	}
+
+	private void sendActors() throws IOException
+	{
+		ArrayList<Actor> actors = serverModel.getActors();
+		for (Actor actor : actors)
+		{
+			os.writeUTF(new ActorPacket(actor).toJSONString());
+		}
+
+	}
+
+	protected void sendNewPlayer() throws IOException
+	{
+		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
+		for (int i = 0; i < maxClientsCount; i++)
+		{
+			if (threads[i] != null && threads[i] != this)
+			{
+				threads[i].addOutGoingPacket(player);
+			}
 		}
 	}
 }

@@ -1,5 +1,7 @@
 package com.tsp.packets;
 
+import com.tsp.game.actors.Actor;
+import com.tsp.game.map.Point3D;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 
@@ -12,14 +14,24 @@ import org.json.simple.JSONObject;
  */
 public abstract class Packet implements JSONAware
 {
-	protected enum PacketType
+	public enum PacketType
 	{
 		NOTAPACKET,
-		MOVEMENTPACKET
+		MOVEMENTPACKET,
+		ACTORPACKET,
+		UPDATEPACKET,
+		ATTACKPACKET,
+		QUITPACKET
 	}
 
 	protected static Integer packetCount = 0;
 	protected Integer packetID;
+
+	public PacketType getPacketType()
+	{
+		return packetType;
+	}
+
 	protected PacketType packetType;
 
 	public Packet(Integer _packetID)
@@ -63,13 +75,37 @@ public abstract class Packet implements JSONAware
 					      obj.containsKey("attack") && obj.containsKey("attackX") && obj.containsKey("attackY")))
 						throw new IllegalArgumentException("Not a valid Movement packet");
 
-					return new MovementPacket(((Long)obj.get("packetID")).intValue(),
+					return new MovementPacket(((Long) obj.get("packetID")).intValue(),
 					                          ((Long) obj.get("playerID")).intValue(),
 					                          ((Long) obj.get("moveX")).intValue(),
-					                          ((Long) obj.get("moveY")).intValue(),
-					                          (Boolean) obj.get("attack"),
-					                          ((Long) obj.get("attackX")).intValue(),
-					                          ((Long) obj.get("attackY")).intValue());
+					                          ((Long) obj.get("moveY")).intValue());
+				}
+				case ACTORPACKET:
+				{
+					if (!(obj.containsKey("player") && ((JSONObject) obj.get("player")).containsKey("id") &&
+					      ((JSONObject) obj.get("player")).containsKey("name") &&
+					      ((JSONObject) obj.get("player")).containsKey("X") &&
+					      ((JSONObject) obj.get("player")).containsKey("Y") &&
+					      ((JSONObject) obj.get("player")).containsKey("Z") &&
+					      ((JSONObject) obj.get("player")).containsKey("health") &&
+					      ((JSONObject) obj.get("player")).containsKey("type") &&
+					    ((JSONObject) obj.get("player")).containsKey("symbol")))
+						throw new IllegalArgumentException("Not a valid actor packet");
+
+
+					int id = ((Long) ((JSONObject) obj.get("player")).get("id")).intValue();
+					String name = (String) ((JSONObject) obj.get("player")).get("name");
+					int x = ((Long) ((JSONObject) obj.get("player")).get("X")).intValue();
+					int y = ((Long) ((JSONObject) obj.get("player")).get("Y")).intValue();
+					int z = ((Long) ((JSONObject) obj.get("player")).get("Z")).intValue();
+					int health = ((Long) ((JSONObject) obj.get("player")).get("health")).intValue();
+					Actor.ActorType actorType = Actor.ActorType
+							.valueOf((String) ((JSONObject) obj.get("player")).get("type"));
+					String symbol = (String) ((JSONObject) obj.get("player")).get("symbol");
+
+					Actor actor = new Actor(id, health, new Point3D(x, y, z), name, actorType, symbol);
+
+					return new ActorPacket(((Long) obj.get("packetID")).intValue(), actor);
 				}
 				default:
 					throw new IllegalArgumentException("Not a valid packet");

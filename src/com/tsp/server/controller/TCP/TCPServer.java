@@ -1,5 +1,6 @@
 package com.tsp.server.controller.TCP;
 
+import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class TCPServer extends Thread
 	private static Socket clientSocket = null;
 
 	// This chat server can accept up to maxClientsCount clients' connections.
-	private static final int maxClientsCount = 10;
+	private static final int maxClientsCount = 8;
 	private static final clientThread[] threads = new clientThread[maxClientsCount];
 	private final ServerModel serverModel;
 
@@ -55,5 +56,10 @@ public class TCPServer extends Thread
 				System.out.println(e);
 			}
 		}
+	}
+
+	public static void addOutGoingPacket(Packet e)
+	{
+		threads[0].addOutGoingPacket(e);
 	}
 }

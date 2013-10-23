@@ -12,36 +12,47 @@ import org.json.simple.JSONObject;
  */
 public class MovementPacket extends Packet
 {
+	public Integer getM_playerID()
+	{
+		return m_playerID;
+	}
+
+	public Integer getM_moveX()
+	{
+		return m_moveX;
+	}
+
+	public Integer getM_moveY()
+	{
+		return m_moveY;
+	}
+
+	public Integer getM_moveZ()
+	{
+		return m_moveZ;
+	}
+
 	Integer m_playerID;
 	Integer m_moveX;
 	Integer m_moveY;
 	Integer m_moveZ;
-	Boolean m_attack;
-	Integer m_attackX;
-	Integer m_attackY;
 
-	public MovementPacket(Integer _packetID, Integer m_playerID, Integer m_moveX, Integer m_moveY, Integer m_moveZ, Boolean m_attack, Integer m_attackX, Integer m_attackY)
+	public MovementPacket(Integer _packetID, Integer m_playerID, Integer m_moveX, Integer m_moveY, Integer m_moveZ )
 	{
 		super(_packetID);
 		this.m_playerID = m_playerID;
 		this.m_moveX = m_moveX;
 		this.m_moveY = m_moveY;
-		this.m_attack = m_attack;
-		this.m_attackX = m_attackX;
-		this.m_attackY = m_attackY;
 		this.m_moveZ = m_moveZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
-	public MovementPacket( Integer m_playerID, Integer m_moveX, Integer m_moveY, Integer m_moveZ, Boolean m_attack, Integer m_attackX, Integer m_attackY)
+	public MovementPacket( Integer m_playerID, Integer m_moveX, Integer m_moveY, Integer m_moveZ)
 	{
 		super();
 		this.m_playerID = m_playerID;
 		this.m_moveX = m_moveX;
 		this.m_moveY = m_moveY;
-		this.m_attack = m_attack;
-		this.m_attackX = m_attackX;
-		this.m_attackY = m_attackY;
 		this.m_moveZ = m_moveZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
@@ -56,9 +67,6 @@ public class MovementPacket extends Packet
 		jb.put("moveX",m_moveX);
 		jb.put("moveY",m_moveY);
 		jb.put("moveZ",m_moveZ);
-		jb.put("attack",m_attack);
-		jb.put("attackX",m_attackX);
-		jb.put("attackY",m_attackY);
 
 		return jb.toString();
 	}
@@ -70,9 +78,7 @@ public class MovementPacket extends Packet
 		       "m_playerID=" + m_playerID +
 		       ", m_moveX=" + m_moveX +
 		       ", m_moveY=" + m_moveY +
-		       ", m_attack=" + m_attack +
-		       ", m_attackX=" + m_attackX +
-		       ", m_attackY=" + m_attackY +
+		       ", m_moveZ=" + m_moveZ +
 		       '}';
 	}
 }

@@ -1,6 +1,7 @@
 package com.tsp.server.controller.UDP;
 
 import com.tsp.packets.Packet;
+import com.tsp.server.model.ServerModel;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -25,11 +26,13 @@ public class RespondeWorker implements Runnable
 
 	DatagramSocket socket = null;
 	DatagramPacket packet = null;
+	ServerModel model = null;
 
-	public RespondeWorker(DatagramSocket socket, DatagramPacket packet)
+	public RespondeWorker(DatagramSocket socket, DatagramPacket packet, ServerModel model)
 	{
 		this.socket = socket;
 		this.packet = packet;
+		this.model = model;
 	}
 
 	public void run()

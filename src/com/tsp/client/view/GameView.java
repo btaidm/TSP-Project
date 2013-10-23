@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.tsp.client.controller.TCPClient;
 import com.tsp.client.event.EventType;
 import com.tsp.client.event.GameListener;
 import com.tsp.client.event.Listenable;
@@ -16,6 +17,7 @@ import com.googlecode.blacken.swing.SwingTerminal;
 import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
 import com.tsp.game.map.Point3D;
+import com.tsp.server.controller.TCP.TCPServer;
 
 public class GameView implements Listenable
 {
@@ -26,8 +28,10 @@ public class GameView implements Listenable
 	boolean quit = false;
 	ArrayList<GameListener> listeners;
 	private int id;
+	boolean attacked = false;
+	private TCPClient tcpClient;
 
-	public GameView(GameModel model)
+	public GameView(GameModel model, TCPClient tcpClient)
 	{
 
 		this.term = new SwingTerminal();
@@ -43,8 +47,15 @@ public class GameView implements Listenable
 		this.curses.setPalette(palette);
 
 		this.model = model;
+		this.tcpClient = tcpClient;
 		this.listeners = new ArrayList<GameListener>();
 	}
+
+	public void setUp()
+	{
+		tcpClient.
+	}
+
 
 	public void play()
 	{
@@ -52,7 +63,7 @@ public class GameView implements Listenable
 		int ch = BlackenKeys.NO_KEY;
 		while (!quit)
 		{
-			ch = this.curses.getch();
+			ch = this.curses.getch(50);
 			process(ch);
 			refresh();
 
@@ -60,6 +71,12 @@ public class GameView implements Listenable
 		}
 		curses.quit();
 		term.quit();
+		this.close();
+	}
+
+	private void close()
+	{
+
 	}
 
 	public void refresh()
@@ -89,12 +106,20 @@ public class GameView implements Listenable
 	{
 		switch (ch)
 		{
+			case BlackenKeys.NO_KEY:
+			{
+				if(attacked)
+				{
+					model.resetAttack();
+				}
+				break;
+			}
 			case BlackenKeys.KEY_ESCAPE:
 				quit = true;
 				break;
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
-				if (this.model.attemptMove(new Point(0, 1)))
+				if (this.model.attemptMove(GameModel.DOWN))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", id);
@@ -106,7 +131,7 @@ public class GameView implements Listenable
 				break;
 			case BlackenKeys.KEY_UP:
 			case 'k':
-				if (this.model.attemptMove(new Point(0, -1)))
+				if (this.model.attemptMove(GameModel.UP))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", 0);
@@ -118,7 +143,7 @@ public class GameView implements Listenable
 				break;
 			case BlackenKeys.KEY_LEFT:
 			case 'h':
-				if (this.model.attemptMove(new Point(-1, 0)))
+				if (this.model.attemptMove(GameModel.LEFT))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", 0);
@@ -130,7 +155,7 @@ public class GameView implements Listenable
 				break;
 			case BlackenKeys.KEY_RIGHT:
 			case 'l':
-				if (this.model.attemptMove(new Point(1, 0)))
+				if (this.model.attemptMove(GameModel.RIGHT))
 				{
 					HashMap<String, Object> movement = new HashMap<String, Object>();
 					movement.put("ID", 0);
@@ -139,6 +164,18 @@ public class GameView implements Listenable
 					movement.put("Z", model.getCurrentLevel());
 					fireEvent(EventType.TURN_MOVE, movement);
 				}
+				break;
+			case 'a':
+				attacked = this.model.attemptAttack(GameModel.LEFT);
+				break;
+			case 'd':
+				attacked = this.model.attemptAttack(GameModel.RIGHT);
+				break;
+			case 's':
+				attacked = this.model.attemptAttack(GameModel.DOWN);
+				break;
+			case 'w':
+				attacked = this.model.attemptAttack(GameModel.UP);
 				break;
 		}
 	}

@@ -59,10 +59,7 @@ public class ConnectionController implements GameListener
 		array.add(new MovementPacket((Integer) e.payload.get("ID"),
 		                             (Integer) e.payload.get("X"),
 		                             (Integer) e.payload.get("Y"),
-		                             (Integer) e.payload.get("Z"),
-		                             false,
-		                             0,
-		                             0));
+		                             (Integer) e.payload.get("Z")));
 	}
 
 	private void processTick()

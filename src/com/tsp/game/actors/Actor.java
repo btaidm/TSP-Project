@@ -1,7 +1,10 @@
-package com.tsp.game.characters;
+package com.tsp.game.actors;
 
 import com.googlecode.blacken.core.Random;
 import com.tsp.game.map.Point3D;
+import com.tsp.packets.Packet;
+import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,13 +13,38 @@ import com.tsp.game.map.Point3D;
  * Time: 12:19 PM
  * To change this template use File | Settings | File Templates.
  */
-public abstract class Character
+public class Actor implements JSONAware
 {
-
+	public enum ActorType
+	{
+		ACTOR_PLAYER,
+		ACTOR_AI
+	}
 	Point3D pos;
 	String name;
 	int id;
 	int health;
+	int color;
+	ActorType type;
+	String symbol;
+
+	protected static int count = 0;
+
+	public Actor()
+	{
+		id = count;
+		count++;
+	}
+
+	public Actor(int id, int health, Point3D pos, String name, ActorType type, String symbol)
+	{
+		this.id = id;
+		this.name = name;
+		this.pos = pos;
+		this.health = health;
+		this.type = type;
+		this.symbol = symbol;
+	}
 
 	boolean checkHit(int x, int y, int z)
 	{
@@ -75,7 +103,7 @@ public abstract class Character
 		return id;
 	}
 
-	public void hit(Character attacking)
+	public void hit(Actor attacking)
 	{
 		this.health -= attacking.getDamage();
 	}
@@ -85,4 +113,21 @@ public abstract class Character
 		Random r = new Random();
 		pos = new Point3D(r.nextInt(0, COLS), r.nextInt(0, ROWS), r.nextInt(0,LVLS));
 	}
+
+	@Override
+	public String toJSONString()
+	{
+		JSONObject jb = new JSONObject();
+		jb.put("name",this.name);
+		jb.put("id",id);
+		jb.put("X",pos.getX());
+		jb.put("Y",pos.getY());
+		jb.put("Z",pos.getZ());
+		jb.put("health",health);
+		jb.put("type", type.toString());
+		jb.put("symbol", symbol);
+		return jb.toString();
+	}
+
+
 }

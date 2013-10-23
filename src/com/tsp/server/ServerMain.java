@@ -1,6 +1,9 @@
 package com.tsp.server;
 
+import com.tsp.server.controller.TCP.TCPServer;
 import com.tsp.server.controller.UDP.RespondeWorker;
+import com.tsp.server.controller.UDP.UDPServer;
+import com.tsp.server.model.ServerModel;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -23,13 +26,12 @@ public class ServerMain
 
 	public static void main(String[] args) throws Exception
 	{
-		DatagramSocket serverSocket = new DatagramSocket(12000, InetAddress.getLoopbackAddress());
-		byte[] receiveData = new byte[1024];
-		while(true)
-		{
-			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-			serverSocket.receive(receivePacket);
-			new Thread(new RespondeWorker(serverSocket, receivePacket)).start();
-		}
+		ServerModel serverModel = new ServerModel();
+		UDPServer udpServer = new UDPServer(serverModel);
+		TCPServer tcpServer = new TCPServer(serverModel);
+		tcpServer.start();
+		udpServer.start();
+
+		serverModel.run();
 	}
 }
