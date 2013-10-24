@@ -1,10 +1,11 @@
 package com.tsp.client.view;
 
 import java.awt.Point;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Properties;
 
+import com.tsp.client.controller.TCPClient;
 import com.tsp.client.event.EventType;
 import com.tsp.client.event.GameListener;
 import com.tsp.client.event.Listenable;
@@ -16,6 +17,11 @@ import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
 import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
+import com.tsp.game.actors.Actor;
+import com.tsp.game.map.Point3D;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.ActorUpdate;
+import com.tsp.packets.Packet;
 
 public class GameView implements Listenable
 {
@@ -23,40 +29,99 @@ public class GameView implements Listenable
 	SwingTerminal term;
 	CursesLikeAPI curses;
 	GameModel model;
-
+	boolean quit = false;
 	ArrayList<GameListener> listeners;
+	private int id;
+	boolean attacked = false;
+	private TCPClient tcpClient;
+	private Point attackDelta;
 
-	public GameView(GameModel model)
+	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
 
-		this.term = new SwingTerminal();
-		this.term.init("TSP Rouglike", 25, 80);
-
-		this.curses = new CursesLikeAPI(this.term);
-		this.curses.resize(24, 80);
-
-		ColorPalette palette = new ColorPalette();
-		palette.addAll(ColorNames.XTERM_256_COLORS, false);
-		palette.putMapping(ColorNames.SVG_COLORS);
-
-		this.curses.setPalette(palette);
-
 		this.model = model;
+		this.tcpClient = tcpClient;
 		this.listeners = new ArrayList<GameListener>();
+		if (setUp())
+		{
+			this.term = new SwingTerminal();
+
+			this.term.init("TSP Rouglike", 25, 80);
+
+			this.curses = new CursesLikeAPI(this.term);
+			this.curses.resize(24, 80);
+
+			ColorPalette palette = new ColorPalette();
+			palette.addAll(ColorNames.XTERM_256_COLORS, false);
+			palette.putMapping(ColorNames.SVG_COLORS);
+
+			this.curses.setPalette(palette);
+		}
+
 	}
 
-	public void play()
+	public boolean setUp() throws InterruptedException
+	{
+		tcpClient.start();
+		while (!model.getReady() && !model.getQuit())
+		{
+			Thread.sleep(20);
+		}
+		if (model.getQuit())
+		{
+			quit = true;
+			return false;
+		}
+		return true;
+	}
+
+
+	public void play() throws IOException
 	{
 		// Main loop of the game happens here
 		int ch = BlackenKeys.NO_KEY;
-		while (true)
+		while (!quit && !model.getQuit())
 		{
-			ch = this.curses.getch();
+			processPackets();
+			ch = this.curses.getch(50);
 			process(ch);
 			refresh();
 
 			fireEvent(EventType.TURN_END, new HashMap<String, Object>());
 		}
+
+		this.close();
+	}
+
+	private void processPackets()
+	{
+		while(model.hasPackets())
+		{
+			Packet packet = model.getPacket();
+			switch (packet.getPacketType())
+			{
+				case ACTOR_PACKET:
+					ActorPacket actorPacket = (ActorPacket)packet;
+					model.addActor(actorPacket.getActor());
+					break;
+				case UPDATE_PACKET:
+					ActorUpdate actorUpdate = (ActorUpdate)packet;
+					model.update(actorUpdate);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	private void close() throws IOException
+	{
+		if (curses != null)
+			curses.quit();
+
+		if (term != null)
+			term.quit();
+		tcpClient.quit();
 	}
 
 	public void refresh()
@@ -65,13 +130,13 @@ public class GameView implements Listenable
 		this.curses.setCursorLocation(-1, -1);
 
 		int zLevel = this.model.getCurrentLevel();
-		
+
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.dungeonRows(); i++)
 		{
 			for (int j = 0; j < this.model.dungeonCols(); j++)
 			{
-				this.term.set(i, j, this.model.get(i, j, zLevel), 255, 0);
+				this.term.set(i, j, this.model.get(i, j, zLevel), model.getColor(j, i, zLevel), 0);
 			}
 		}
 		this.curses.refresh();
@@ -79,64 +144,80 @@ public class GameView implements Listenable
 
 	public void process(int ch)
 	{
+		boolean moved = false;
 		switch (ch)
 		{
+			case BlackenKeys.NO_KEY:
+			{
+				if (attacked && model.resetAttack())
+				{
+					attackDelta = null;
+					attacked = false;
+				}
+				break;
+			}
+			case BlackenKeys.KEY_ESCAPE:
+				quit = true;
+				break;
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
-				if (this.model.attemptMove(GameModel.DOWN))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", GameModel.DOWN.x);
-					movement.put("Y", GameModel.DOWN.y);
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(Point3D.DOWN);
 				break;
 			case BlackenKeys.KEY_UP:
 			case 'k':
-				if (this.model.attemptMove(GameModel.UP))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", GameModel.UP.x);
-					movement.put("Y", GameModel.UP.y);
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(Point3D.UP);
 				break;
 			case BlackenKeys.KEY_LEFT:
 			case 'h':
-				if (this.model.attemptMove(GameModel.LEFT))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", GameModel.LEFT.x);
-					movement.put("Y", GameModel.LEFT.y);
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(Point3D.LEFT);
 				break;
 			case BlackenKeys.KEY_RIGHT:
 			case 'l':
-				if (this.model.attemptMove(GameModel.RIGHT))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", new Integer(0));
-					movement.put("X", GameModel.RIGHT.x);
-					movement.put("Y", GameModel.RIGHT.y);
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(Point3D.RIGHT);
 				break;
 			case 'a':
-				this.model.attemptAttack(GameModel.LEFT);
+				if(attacked = this.model.attemptAttack(Point3D.LEFT))
+				{
+					attackDelta = Point3D.LEFT;
+				}
 				break;
 			case 'd':
-				this.model.attemptAttack(GameModel.RIGHT);
+				if(attacked = this.model.attemptAttack(Point3D.RIGHT))
+				{
+					attackDelta = Point3D.RIGHT;
+				}
 				break;
 			case 's':
-				this.model.attemptAttack(GameModel.DOWN);
+				if(attacked = this.model.attemptAttack(Point3D.DOWN))
+				{
+					attackDelta = Point3D.DOWN;
+				}
 				break;
 			case 'w':
-				this.model.attemptAttack(GameModel.UP);
+				if(attacked = this.model.attemptAttack(Point3D.UP))
+				{
+					attackDelta = Point3D.UP;
+				}
 				break;
+		}
+		if(moved)
+		{
+			Actor player = model.getMe();
+			HashMap<String, Object> movement = new HashMap<String, Object>();
+			movement.put("ID", player.getId());
+			movement.put("X", player.getX());
+			movement.put("Y", player.getY());
+			movement.put("Z", model.getCurrentLevel());
+			fireEvent(EventType.TURN_MOVE, movement);
+		}
+		if(attacked)
+		{
+			Actor player = model.getMe();
+			HashMap<String, Object> attack = new HashMap<String, Object>();
+			attack.put("ID", player.getId());
+			attack.put("X", (int)attackDelta.getX());
+			attack.put("Y", (int)attackDelta.getY());
+			fireEvent(EventType.TURN_ATTACK, attack);
 		}
 	}
 

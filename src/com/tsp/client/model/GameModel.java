@@ -1,142 +1,332 @@
 package com.tsp.client.model;
 
 import java.awt.Point;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
-import com.googlecode.blacken.core.Random;
+import com.tsp.game.actors.Actor;
+import com.tsp.game.map.Dungeon;
+import com.tsp.game.map.Point3D;
+import com.tsp.packets.ActorUpdate;
+import com.tsp.packets.Packet;
 
-public class GameModel {
+public class GameModel
+{
 
-	//Character and dungeon
-	Point3D playerLocation;
+	Queue<Packet> packets = new LinkedList<Packet>();
+	boolean quit = false;
+
+	//Actor and dungeon
 	Point3D attackLocation;
 	String attackAnimation = "-";
 	int attackCounter = 0;
-	private final int ATTACK_COUNTER_MAX = 1;
-	
-	String[][][] dungeon;
+	private final int ATTACK_COUNTER_MAX = 2;
 
-	//Dungeon properties
-	private final int ROWS = 24;
-	private final int COLS = 80;
-	private final int FLOORS = 4;
+	Dungeon dungeon;
 
-	//Points corresponding to directions
-	public static final Point LEFT = new Point(-1, 0);
-	public static final Point RIGHT = new Point(1, 0);
-	public static final Point UP = new Point(0, -1);
-	public static final Point DOWN = new Point(0, 1);
-	
+
 	//Game tile types
-	public static final String PLAYER = "@";
-	public static final String EMPTY_FLOOR = " ";
-	public static final String WALL = "#";
-	public static final String STAIR_UP = "\u25B2";
-	public static final String STAIR_DOWN = "\u25BC";
+	private String name = "Player";
+	private int id;
+	private Actor me;
+	private HashMap<Integer, Actor> otherActors;
+	private boolean ready = false;
 
-	public GameModel() {
-		MapGenerator f = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
-		dungeon = f.getMap(FLOORS, ROWS, COLS);
 
-		//Choose a random location for the player
-		Random r = new Random();
-		playerLocation = new Point3D(r.nextInt(0, COLS), r.nextInt(0, ROWS), r.nextInt(0, FLOORS));
+	public GameModel()
+	{
+		otherActors = new HashMap<Integer, Actor>();
+	}
 
-		System.out.println(playerLocation);
-		while (dungeon[(int)playerLocation.getZ()][(int)playerLocation.getX()][(int) playerLocation.getY()].equals(WALL)) {
-			playerLocation.move(r.nextInt(0, COLS), r.nextInt(0, ROWS));
+
+	public int dungeonRows()
+	{
+		return dungeon.getRows();
+	}
+
+	public int dungeonCols()
+	{
+		return dungeon.getColumns();
+	}
+
+	public String get(int y, int x, int z)
+	{
+		if (me.getPos().equals(new Point3D(x, y, z)))
+		{
+			return me.getSymbol();
 		}
-	}
-
-	public int dungeonRows() {
-		return ROWS;
-	}
-
-	public int dungeonCols() {
-		return COLS;
-	}
-
-	public String get(int i, int j, int z) {
-		if (j == playerLocation.getX() && i == playerLocation.getY() && z == playerLocation.getZ()) {
-			return PLAYER;
-		} else if (attackLocation != null && j == attackLocation.getX() && i == attackLocation.getY() && z == attackLocation.getZ()) {
+		else if (attackLocation != null && x == attackLocation.getX() && y == attackLocation.getY() &&
+		         z == attackLocation.getZ())
+		{
 			return attackAnimation;
 		}
-		return this.dungeon[z][j][i];
+
+		for (Actor a : otherActors.values())
+		{
+			if (a.getPos().equals(new Point3D(x, y, z)))
+			{
+				return a.getSymbol();
+			}
+		}
+
+		return this.dungeon.getTile(new Point3D(x, y, z));
 	}
 
-	public int getCurrentLevel() {
-		return this.playerLocation.getZ();
+	public int getCurrentLevel()
+	{
+		return me.getZ();
 	}
 
-	public boolean attemptMove(Point delta) {
-		Point3D newPosition = (Point3D) playerLocation.clone();
-		newPosition.translate((int)delta.getX(), (int)delta.getY());
-
-		if (attackCounter > 0) {
+	public boolean resetAttack()
+	{
+		if (attackCounter > 0)
+		{
 			attackCounter--;
 			return false;
 		}
-		
+
 		// On every attempted move we want to be able to clear the attack
 		clearAttack();
-		
+		return true;
+	}
+
+	public boolean attemptMove(Point delta)
+	{
+		Point3D newPosition = me.getPos().clone();
+		newPosition.translate((int) delta.getX(), (int) delta.getY());
+
+		if (attackCounter > 0)
+		{
+			attackCounter--;
+			return false;
+		}
+
+		// On every attempted move we want to be able to clear the attack
+		clearAttack();
+
 		// Verify the new Point3D is inside the map
-		if (inBounds(newPosition)) {
+		if (inBounds(newPosition))
+		{
 			int x = (int) newPosition.getX();
 			int y = (int) newPosition.getY();
 			int z = newPosition.getZ();
-			
-			if (this.dungeon[z][x][y].equals(EMPTY_FLOOR)) {
-				playerLocation = newPosition;
-				return true;
-			} else if (this.dungeon[z][x][y].equals(STAIR_UP)) {
-				playerLocation = newPosition;
-				playerLocation.moveZ(1);
-				return true;
-			} else if (this.dungeon[z][x][y].equals(STAIR_DOWN)) {
-				playerLocation = newPosition;
-				playerLocation.moveZ(-1);
-				return true;
-			} else {
-				// Do nothing here
+			if (!occupied(newPosition))
+			{
+				if (dungeon.isEmptyFloor(x, y, z))
+				{
+					me.setPos(newPosition);
+					return true;
+				}
+				else if (dungeon.isStairUp(x, y, z))
+				{
+					me.setPos(newPosition);
+					me.move(new Point3D(0, 0, 1));
+					return true;
+				}
+				else if (dungeon.isStairDown(x, y, z))
+				{
+					me.setPos(newPosition);
+					me.move(new Point3D(0, 0, -1));
+					return true;
+				}
+				else
+				{
+				}
 			}
 		}
 		return false;
 	}
-	
-	public boolean attemptAttack(Point delta) {
-		Point3D newPosition = (Point3D) playerLocation.clone();
+
+	public Point3D getPlayerLocation()
+	{
+		return me.getPos();
+	}
+
+	public boolean attemptAttack(Point delta)
+	{
+		Point3D newPosition = (Point3D) me.getPos().clone();
 		newPosition.translate(delta.x, delta.y);
-		
+
 		int x = newPosition.x;
 		int y = newPosition.y;
 		int z = newPosition.getZ();
-		
-		if (attackCounter > 0) {
+
+		if (attackCounter > 0)
+		{
 			attackCounter--;
 			return false;
 		}
-		
-		if (inBounds(newPosition) && this.dungeon[z][x][y].equals(EMPTY_FLOOR)) {
+
+		if (inBounds(newPosition) && dungeon.isEmptyFloor(new Point3D(x, y, z)))
+		{
 			attackLocation = newPosition;
 			attackCounter = ATTACK_COUNTER_MAX;
-			
+
 			//Calculate the attack animation
-			if (delta.equals(UP) || delta.equals(DOWN))
+			if (delta.equals(Point3D.UP) || delta.equals(Point3D.DOWN))
 				attackAnimation = "|";
 			else
 				attackAnimation = "-";
 			return true;
 		}
-		
+
 		return false;
 	}
-	
-	public void clearAttack() {
+
+	public void clearAttack()
+	{
 		attackLocation = null;
 	}
-	
-	private boolean inBounds(Point p) {
-		return p.y >= 0 && p.y < ROWS && p.x >= 0 && p.x < COLS;
+
+	private boolean inBounds(Point p)
+	{
+		return p.y >= 0 && p.y < dungeon.getRows() && p.x >= 0 && p.x < dungeon.getColumns();
+	}
+
+	public boolean packetsAviable()
+	{
+		boolean ret;
+		synchronized (this)
+		{
+			ret = !packets.isEmpty();
+		}
+		return ret;
+	}
+
+	public Packet getPacket()
+	{
+		Packet ret;
+		synchronized (this)
+		{
+			ret = packets.poll();
+		}
+		return ret;
+	}
+
+	public void insertPacket(Packet e)
+	{
+		if (e != null)
+		{
+			synchronized (this)
+			{
+				packets.add(e);
+			}
+		}
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public void setID(int id)
+	{
+		this.id = id;
+	}
+
+	public void setDungeon(String[][][] dungeon)
+	{
+		this.dungeon = new Dungeon(dungeon);
+	}
+
+	public void setMe(Actor me)
+	{
+		this.me = me;
+	}
+
+	public void setQuit(boolean quit)
+	{
+		this.quit = quit;
+	}
+
+	public boolean getQuit()
+	{
+		return quit;
+	}
+
+	public boolean getReady()
+	{
+		return ready;
+	}
+
+	public void setReady(boolean ready)
+	{
+		this.ready = ready;
+	}
+
+	public Actor getMe()
+	{
+		return me;
+	}
+
+	public int getColor(int x, int y, int z)
+	{
+		if (me.getPos().equals(new Point3D(x, y, z)) ||
+		    (attackLocation != null && x == attackLocation.getX() && y == attackLocation.getY() &&
+		     z == attackLocation.getZ()))
+		{
+			return me.getColor();
+		}
+
+
+		for (Actor a : otherActors.values())
+		{
+			if (a.getPos().equals(new Point3D(x, y, z)))
+			{
+				return a.getColor();
+			}
+		}
+
+
+		if (dungeon.isStairUp(x, y, z) || dungeon.isStairDown(x, y, z))
+			return (int) (255.0 / 2);
+		return 255;
+	}
+
+	public boolean hasPackets()
+	{
+		return !packets.isEmpty();
+	}
+
+	public void update(ActorUpdate actorUpdate)
+	{
+		if (otherActors.containsKey(actorUpdate.getActorID()))
+		{
+			if (actorUpdate.contains("remove"))
+			{
+				otherActors.remove(actorUpdate.getActorID());
+			}
+			else
+			{
+				if (actorUpdate.contains("X"))
+					otherActors.get(actorUpdate.getActorID()).setX(((Long) actorUpdate.getValue("X")).intValue());
+				if (actorUpdate.contains("Y"))
+					otherActors.get(actorUpdate.getActorID()).setY(((Long) actorUpdate.getValue("Y")).intValue());
+				if (actorUpdate.contains("Z"))
+					otherActors.get(actorUpdate.getActorID()).setZ(((Long) actorUpdate.getValue("Z")).intValue());
+				if (actorUpdate.contains("health"))
+					otherActors.get(actorUpdate.getActorID())
+							.setHealth(((Long) actorUpdate.getValue("health")).intValue());
+				if (actorUpdate.contains("symbol"))
+					otherActors.get(actorUpdate.getActorID()).setSymbol((String) actorUpdate.getValue("symbol"));
+			}
+		}
+	}
+
+	public void addActor(Actor actor)
+	{
+		if (actor.getId() != me.getId() && !otherActors.containsKey(actor.getId()))
+			otherActors.put(actor.getId(), actor);
+	}
+
+	private boolean occupied(Point3D point)
+	{
+		for (Actor actor : otherActors.values())
+		{
+			if (actor.getPos().equals(point))
+				return true;
+		}
+		return false;
 	}
 }

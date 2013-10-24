@@ -11,34 +11,48 @@ import org.json.simple.JSONObject;
  */
 public class MovementPacket extends Packet
 {
-	Integer m_playerID;
-	Integer m_moveX;
-	Integer m_moveY;
-	Boolean m_attack;
-	Integer m_attackX;
-	Integer m_attackY;
+	public Integer getM_playerID()
+	{
+		return m_playerID;
+	}
 
-	public MovementPacket(Integer _packetID, Integer m_playerID, Integer m_moveX, Integer m_moveY, Boolean m_attack, Integer m_attackX, Integer m_attackY)
+	public Integer getM_newX()
+	{
+		return m_newX;
+	}
+
+	public Integer getM_newY()
+	{
+		return m_newY;
+	}
+
+	public Integer getM_newZ()
+	{
+		return m_newZ;
+	}
+
+	Integer m_playerID;
+	Integer m_newX;
+	Integer m_newY;
+	Integer m_newZ;
+
+	public MovementPacket(Integer _packetID, Integer m_playerID, Integer m_newX, Integer m_newY, Integer m_moveZ )
 	{
 		super(_packetID);
 		this.m_playerID = m_playerID;
-		this.m_moveX = m_moveX;
-		this.m_moveY = m_moveY;
-		this.m_attack = m_attack;
-		this.m_attackX = m_attackX;
-		this.m_attackY = m_attackY;
+		this.m_newX = m_newX;
+		this.m_newY = m_newY;
+		this.m_newZ = m_moveZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
-	public MovementPacket( Integer m_playerID, Integer m_moveX, Integer m_moveY, Boolean m_attack, Integer m_attackX, Integer m_attackY)
+	public MovementPacket( Integer m_playerID, Integer m_newX, Integer m_newY, Integer m_newZ)
 	{
 		super();
 		this.m_playerID = m_playerID;
-		this.m_moveX = m_moveX;
-		this.m_moveY = m_moveY;
-		this.m_attack = m_attack;
-		this.m_attackX = m_attackX;
-		this.m_attackY = m_attackY;
+		this.m_newX = m_newX;
+		this.m_newY = m_newY;
+		this.m_newZ = m_newZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
@@ -49,11 +63,9 @@ public class MovementPacket extends Packet
 		jb.put("packetID",packetID);
 		jb.put("packetType",packetType.toString());
 		jb.put("playerID",m_playerID);
-		jb.put("moveX",m_moveX);
-		jb.put("moveY",m_moveY);
-		jb.put("attack",m_attack);
-		jb.put("attackX",m_attackX);
-		jb.put("attackY",m_attackY);
+		jb.put("X", m_newX);
+		jb.put("Y", m_newY);
+		jb.put("Z", m_newZ);
 
 		return jb.toString();
 	}
@@ -63,11 +75,9 @@ public class MovementPacket extends Packet
 	{
 		return "MovementPacket{" +
 		       "m_playerID=" + m_playerID +
-		       ", m_moveX=" + m_moveX +
-		       ", m_moveY=" + m_moveY +
-		       ", m_attack=" + m_attack +
-		       ", m_attackX=" + m_attackX +
-		       ", m_attackY=" + m_attackY +
+		       ", m_newX=" + m_newX +
+		       ", m_newY=" + m_newY +
+		       ", m_newZ=" + m_newZ +
 		       '}';
 	}
 }
