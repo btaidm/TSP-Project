@@ -144,7 +144,7 @@ public class GameModel
 
 	public Point3D getPlayerLocation()
 	{
-		return playerLocation;
+		return me.getPos();
 	}
 
 	public boolean attemptAttack(Point delta)
