@@ -46,7 +46,9 @@ public class GameView implements Listenable
 		{
 			this.term = new SwingTerminal();
 
+
 			this.term.init("TSP Rouglike", 25, 80);
+			term.resize(25,80);
 
 			this.curses = new CursesLikeAPI(this.term);
 			this.curses.resize(24, 80);
