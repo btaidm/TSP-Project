@@ -14,6 +14,7 @@ import org.json.simple.JSONObject;
 public class Player extends Actor
 {
 	int playerCount = 0;
+
 	public Player(int COLS, int ROWS, int LVLS)
 	{
 		newPosition(COLS,ROWS,LVLS);
@@ -32,6 +33,7 @@ public class Player extends Actor
 		name = _name;
 		health = 10;
 		playerCount++;
+		symbol = "@";
 	}
 
 

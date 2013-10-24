@@ -31,12 +31,12 @@ public class UDPServer extends Thread
 		try
 		{
 			serverSocket = new DatagramSocket(12000, InetAddress.getLoopbackAddress());
-			byte[] receiveData = new byte[1024];
 			while(true)
 			{
+				byte[] receiveData = new byte[1024];
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				serverSocket.receive(receivePacket);
-				new Thread(new RespondeWorker(serverSocket, receivePacket, model)).start();
+				new Thread(new RespondWorker(serverSocket, receivePacket, model)).start();
 			}
 		}
 		catch (SocketException e)

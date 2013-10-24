@@ -21,14 +21,14 @@ import java.nio.charset.Charset;
  * Time: 2:32 PM
  * To change this template use File | Settings | File Templates.
  */
-public class RespondeWorker implements Runnable
+public class RespondWorker implements Runnable
 {
 
 	DatagramSocket socket = null;
 	DatagramPacket packet = null;
 	ServerModel model = null;
 
-	public RespondeWorker(DatagramSocket socket, DatagramPacket packet, ServerModel model)
+	public RespondWorker(DatagramSocket socket, DatagramPacket packet, ServerModel model)
 	{
 		this.socket = socket;
 		this.packet = packet;
@@ -60,13 +60,12 @@ public class RespondeWorker implements Runnable
 		try
 		{
 			parsedObject = JSONValue.parseWithException(str.toString().trim());
-			for (Object o : (JSONArray) parsedObject)
-			{
-				if (o instanceof JSONObject)
+				if (parsedObject instanceof JSONObject)
 				{
-					System.out.println(Packet.parseJSONObject((JSONObject) o).toString());
+					Packet packet1 = Packet.parseJSONObject((JSONObject) parsedObject);
+					model.putIncoming(packet1);
+					System.out.println(packet1.toString());
 				}
-			}
 		}
 		catch (ParseException e)
 		{
@@ -76,6 +75,8 @@ public class RespondeWorker implements Runnable
 		{
 			data[i] = 0;
 		}
+
+
 		//System.out.println(str.toString());
 		return null;
 	}

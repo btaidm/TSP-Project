@@ -20,7 +20,7 @@ public class GameModel
 	Point3D attackLocation;
 	String attackAnimation = "-";
 	int attackCounter = 0;
-	private final int ATTACK_COUNTER_MAX = 3;
+	private final int ATTACK_COUNTER_MAX = 2;
 
 	Dungeon dungeon;
 
@@ -71,7 +71,7 @@ public class GameModel
 		{
 			if (a.getPos().equals(new Point3D(x, y, z)))
 			{
-				return me.getSymbol();
+				return a.getSymbol();
 			}
 		}
 
@@ -210,9 +210,12 @@ public class GameModel
 
 	public void insertPacket(Packet e)
 	{
-		synchronized (this)
+		if (e != null)
 		{
-			packets.add(e);
+			synchronized (this)
+			{
+				packets.add(e);
+			}
 		}
 	}
 
@@ -256,4 +259,8 @@ public class GameModel
 		this.ready = ready;
 	}
 
+	public Actor getMe()
+	{
+		return me;
+	}
 }

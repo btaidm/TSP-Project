@@ -30,6 +30,16 @@ public class Actor implements JSONAware
 		return pos.getZ();
 	}
 
+	public int getX()
+	{
+		return (int) pos.getX();
+	}
+
+	public int getY()
+	{
+		return (int) pos.getY();
+	}
+
 	public enum ActorType
 	{
 		ACTOR_PLAYER,
@@ -144,5 +154,17 @@ public class Actor implements JSONAware
 		return jb.toString();
 	}
 
-
+	@Override
+	public String toString()
+	{
+		return "Actor{" +
+		       "pos=" + pos +
+		       ", name='" + name + '\'' +
+		       ", id=" + id +
+		       ", health=" + health +
+		       ", color=" + color +
+		       ", type=" + type +
+		       ", symbol='" + symbol + '\'' +
+		       '}';
+	}
 }

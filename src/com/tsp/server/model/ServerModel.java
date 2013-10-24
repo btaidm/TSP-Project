@@ -5,7 +5,7 @@ import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
 import com.tsp.game.actors.Player;
-import com.tsp.packets.Packet;
+import com.tsp.packets.*;
 import com.tsp.server.controller.TCP.TCPServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ public class ServerModel implements Runnable
 		players = new ConcurrentHashMap<Integer, Player>();
 		ais = new HashMap<Integer, AI>();
 		otherActors = new HashMap<Integer, Actor>();
-		incomingPackets = new LinkedBlockingQueue<Packet>();
+		incomingPackets = new LinkedList<Packet>();
 		outgoingPackets = new LinkedList<Packet>();
 		generateDungeon();
 
@@ -133,7 +133,7 @@ public class ServerModel implements Runnable
 			}
 			catch (InterruptedException e)
 			{
-				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+				e.printStackTrace();
 			}
 		}
 	}
@@ -158,6 +158,46 @@ public class ServerModel implements Runnable
 
 	private void processPackets()
 	{
-		//LOGGER.info("{}: {}: Model: Processing Incoming Packets", Thread.currentThread().getName(),Thread.currentThread().getId());
+		synchronized (this)
+		{
+			while(!incomingPackets.isEmpty())
+			{
+				Packet packet = incomingPackets.poll();
+				switch (packet.getPacketType())
+				{
+					case MOVEMENTPACKET:
+						MovementPacket movementPacket = (MovementPacket) packet;
+						System.out.println(packet.toString());
+						break;
+					case ACTORPACKET:
+						ActorPacket actorPacket = (ActorPacket) packet;
+						System.out.println(packet.toString());
+						break;
+					case UPDATEPACKET:
+						ActorUpdate actorUpdate = (ActorUpdate) packet;
+						System.out.println(packet.toString());
+						break;
+					case ATTACKPACKET:
+						AttackPacket attackPacket = (AttackPacket) packet;
+						System.out.println(packet.toString());
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	}
+
+	public void putIncoming(Packet packet)
+	{
+		synchronized (this)
+		{
+			incomingPackets.add(packet);
+		}
+	}
+
+	public void removePlayer(Integer playerID)
+	{
+		players.remove(playerID);
 	}
 }

@@ -11,17 +11,17 @@ import org.json.simple.JSONObject;
  */
 public class QuitPacket extends Packet
 {
-		public QuitPacket()
-		{
-			packetType = PacketType.QUITPACKET;
-		}
+	public QuitPacket()
+	{
+		packetType = PacketType.QUITPACKET;
+	}
 
 	@Override
 	public String toJSONString()
 	{
 		JSONObject jb = new JSONObject();
-		jb.put("packetID",packetID);
-		jb.put("packetType",packetType.toString());
+		jb.put("packetID", packetID);
+		jb.put("packetType", packetType.toString());
 		return jb.toJSONString();
 	}
 }

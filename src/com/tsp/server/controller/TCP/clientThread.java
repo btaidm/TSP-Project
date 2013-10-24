@@ -119,9 +119,15 @@ class clientThread extends Thread
 		    /* Start the conversation. */
 			while (running)
 			{
+				try
+				{
+					this.wait(10);
+				}
+				catch (Exception e)
+				{
+				}
 				processIncoming();
 				processPackets();
-				this.wait(10);
 				break;
 			}
 
@@ -130,10 +136,6 @@ class clientThread extends Thread
 		{
 			e.printStackTrace();
 
-		}
-		catch (InterruptedException e)
-		{
-			e.printStackTrace();
 		}
 		finally
 		{
@@ -163,8 +165,8 @@ class clientThread extends Thread
 			if (object != null && object instanceof JSONObject)
 			{
 				Packet packet = Packet.parseJSONObject((JSONObject) object);
-					if (packet.getPacketType() == Packet.PacketType.QUITPACKET)
-						running = false;
+				if (packet.getPacketType() == Packet.PacketType.QUITPACKET)
+					running = false;
 			}
 		}
 		catch (IOException e)
@@ -202,6 +204,7 @@ class clientThread extends Thread
 	  /*
 	   * Close the output stream, close the input stream, close the socket.
        */
+		serverModel.removePlayer(playerID);
 		is.close();
 		os.close();
 		clientSocket.close();
@@ -239,7 +242,10 @@ class clientThread extends Thread
 
 	private void sendActors() throws IOException
 	{
-		LOGGER.info("{}: {}: {}: Sending Actors", Thread.currentThread().getName(),Thread.currentThread().getId(), this.getClass());
+		LOGGER.info("{}: {}: {}: Sending Actors",
+		            Thread.currentThread().getName(),
+		            Thread.currentThread().getId(),
+		            this.getClass());
 		ArrayList<Actor> actors = serverModel.getActors();
 		for (Actor actor : actors)
 		{

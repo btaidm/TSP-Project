@@ -7,13 +7,16 @@ public class GameController implements GameListener {
 
 	@Override
 	public void receiveEvent(GameEvent e) {
-		switch(e.type) {
-		case TURN_END:
-			processTick();
-		case TURN_MOVE:
-
-		default:
-			break;
+		switch (e.type)
+		{
+			case TURN_END:
+				processTick();
+			case TURN_MOVE:
+				break;
+			default:
+				break;
+			case TURN_ATTACK:
+				break;
 		}
 	}
 

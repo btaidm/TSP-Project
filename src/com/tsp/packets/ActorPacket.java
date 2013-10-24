@@ -39,7 +39,16 @@ public class ActorPacket extends Packet
 		JSONObject jb = new JSONObject();
 		jb.put("packetID",packetID);
 		jb.put("packetType",packetType.toString());
-		jb.put("player", actor);
+		jb.put("actor", actor);
+
 		return jb.toString();
+	}
+
+	@Override
+	public String toString()
+	{
+		return "ActorPacket{" +
+		       "actor=" + actor +
+		       '}';
 	}
 }

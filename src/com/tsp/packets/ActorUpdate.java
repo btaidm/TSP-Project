@@ -3,6 +3,7 @@ package com.tsp.packets;
 import org.json.simple.JSONObject;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -45,5 +46,26 @@ public class ActorUpdate extends Packet
 		jsonObject.put("packetID", packetID);
 		jsonObject.put("packetType",packetType.toString());
 		return jsonObject.toJSONString();
+	}
+
+	@Override
+	public String toString()
+	{
+		StringBuilder sb = new StringBuilder("ActorUpdate{data={");
+		boolean first = true;
+		for(Map.Entry<String,Object> entry : data.entrySet())
+		{
+			if(!first)
+			{
+				sb.append(",");
+			}
+			else
+			{
+				first = false;
+			}
+			sb.append(entry);
+		}
+		sb.append("}}");
+		return sb.toString();
 	}
 }

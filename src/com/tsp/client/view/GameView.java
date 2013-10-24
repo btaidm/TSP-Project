@@ -17,6 +17,7 @@ import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
 import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
+import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Point3D;
 import com.tsp.server.controller.TCP.TCPServer;
 
@@ -31,6 +32,7 @@ public class GameView implements Listenable
 	private int id;
 	boolean attacked = false;
 	private TCPClient tcpClient;
+	private Point attackDelta;
 
 	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
@@ -94,7 +96,7 @@ public class GameView implements Listenable
 
 		if (term != null)
 			term.quit();
-		tcpClient.sendQuit();
+		tcpClient.quit();
 	}
 
 	public void refresh()
@@ -122,13 +124,15 @@ public class GameView implements Listenable
 
 	public void process(int ch)
 	{
+		boolean moved = false;
 		switch (ch)
 		{
 			case BlackenKeys.NO_KEY:
 			{
-				if (attacked)
+				if (attacked && model.resetAttack())
 				{
-					model.resetAttack();
+					attackDelta = null;
+					attacked = false;
 				}
 				break;
 			}
@@ -137,64 +141,63 @@ public class GameView implements Listenable
 				break;
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
-				if (this.model.attemptMove(GameModel.DOWN))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", id);
-					movement.put("X", 0);
-					movement.put("Y", 1);
-					movement.put("Z", model.getCurrentLevel());
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(GameModel.DOWN);
 				break;
 			case BlackenKeys.KEY_UP:
 			case 'k':
-				if (this.model.attemptMove(GameModel.UP))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", 0);
-					movement.put("X", 0);
-					movement.put("Y", -1);
-					movement.put("Z", model.getCurrentLevel());
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(GameModel.UP);
 				break;
 			case BlackenKeys.KEY_LEFT:
 			case 'h':
-				if (this.model.attemptMove(GameModel.LEFT))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", 0);
-					movement.put("X", -1);
-					movement.put("Y", 0);
-					movement.put("Z", model.getCurrentLevel());
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(GameModel.LEFT);
 				break;
 			case BlackenKeys.KEY_RIGHT:
 			case 'l':
-				if (this.model.attemptMove(GameModel.RIGHT))
-				{
-					HashMap<String, Object> movement = new HashMap<String, Object>();
-					movement.put("ID", 0);
-					movement.put("X", 1);
-					movement.put("Y", 0);
-					movement.put("Z", model.getCurrentLevel());
-					fireEvent(EventType.TURN_MOVE, movement);
-				}
+				moved = this.model.attemptMove(GameModel.RIGHT);
 				break;
 			case 'a':
-				attacked = this.model.attemptAttack(GameModel.LEFT);
+				if(attacked = this.model.attemptAttack(GameModel.LEFT))
+				{
+					attackDelta = GameModel.LEFT;
+				}
 				break;
 			case 'd':
-				attacked = this.model.attemptAttack(GameModel.RIGHT);
+				if(attacked = this.model.attemptAttack(GameModel.RIGHT))
+				{
+					attackDelta = GameModel.RIGHT;
+				}
 				break;
 			case 's':
-				attacked = this.model.attemptAttack(GameModel.DOWN);
+				if(attacked = this.model.attemptAttack(GameModel.DOWN))
+				{
+					attackDelta = GameModel.DOWN;
+				}
 				break;
 			case 'w':
-				attacked = this.model.attemptAttack(GameModel.UP);
+				if(attacked = this.model.attemptAttack(GameModel.UP))
+				{
+					attackDelta = GameModel.UP;
+				}
 				break;
+		}
+		if(moved)
+		{
+			Actor player = model.getMe();
+			HashMap<String, Object> movement = new HashMap<String, Object>();
+			movement.put("ID", player.getId());
+			movement.put("X", player.getX());
+			movement.put("Y", player.getY());
+			movement.put("Z", model.getCurrentLevel());
+			fireEvent(EventType.TURN_MOVE, movement);
+		}
+		if(attacked)
+		{
+			Actor player = model.getMe();
+			HashMap<String, Object> attack = new HashMap<String, Object>();
+			attack.put("ID", player.getId());
+			attack.put("X", (int)attackDelta.getX());
+			attack.put("Y", (int)attackDelta.getY());
+			fireEvent(EventType.TURN_ATTACK, attack);
 		}
 	}
 

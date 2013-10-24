@@ -46,6 +46,7 @@ public class TCPClient extends Thread
 			model.setDungeon(getDungeon());
 			model.setMe(getPlayer());
 			model.setReady(true);
+			clientSocket.setSoTimeout(100);
 			while (running)
 			{
 				synchronized (this)
@@ -56,7 +57,7 @@ public class TCPClient extends Thread
 		}
 		catch (IOException e)
 		{
-			LOGGER.info("{}", e);
+			LOGGER.info("{}", e.toString());
 			model.setQuit(true);
 		}
 	}
@@ -142,7 +143,6 @@ public class TCPClient extends Thread
 		}
 		catch (IOException e)
 		{
-			LOGGER.info("{}", e);
 			return null;
 		}
 		return null;
@@ -161,6 +161,17 @@ public class TCPClient extends Thread
 
 		if (clientSocket != null)
 			clientSocket.close();
+	}
+
+	public void quit() throws IOException
+	{
+		running = false;
+		sendQuit();
+	}
+
+	public void setRunning(boolean running)
+	{
+		this.running = running;
 	}
 
 

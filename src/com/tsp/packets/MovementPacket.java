@@ -46,13 +46,13 @@ public class MovementPacket extends Packet
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
-	public MovementPacket( Integer m_playerID, Integer m_newX, Integer m_newY, Integer m_moveZ)
+	public MovementPacket( Integer m_playerID, Integer m_newX, Integer m_newY, Integer m_newZ)
 	{
 		super();
 		this.m_playerID = m_playerID;
 		this.m_newX = m_newX;
 		this.m_newY = m_newY;
-		this.m_newZ = m_moveZ;
+		this.m_newZ = m_newZ;
 		this.packetType = PacketType.MOVEMENTPACKET;
 	}
 
