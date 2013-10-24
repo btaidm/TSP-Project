@@ -111,12 +111,8 @@ public class GameView implements Listenable
 		{
 			for (int j = 0; j < this.model.dungeonCols(); j++)
 			{
-				int color = 255;
-				if (this.model.getPlayerLocation().equals(new Point3D(j, i, zLevel)))
-				{
-					color = 255 / 2;
-				}
-				this.term.set(i, j, this.model.get(i, j, zLevel), color, 0);
+
+				this.term.set(i, j, this.model.get(i, j, zLevel), model.getColor(j, i, zLevel), 0);
 			}
 		}
 		this.curses.refresh();

@@ -263,4 +263,28 @@ public class GameModel
 	{
 		return me;
 	}
+
+	public int getColor(int x, int y, int z)
+	{
+		if (me.getPos().equals(new Point3D(x, y, z)) ||
+		    (attackLocation != null && x == attackLocation.getX() && y == attackLocation.getY() &&
+		     z == attackLocation.getZ()))
+		{
+			return me.getColor();
+		}
+
+
+		for (Actor a : otherActors)
+		{
+			if (a.getPos().equals(new Point3D(x, y, z)))
+			{
+				return a.getColor();
+			}
+		}
+
+
+		if(dungeon.isStairUp(x,y,z) || dungeon.isStairDown(x, y, z))
+			return (int) (255.0 / 2);
+		return 255;
+	}
 }

@@ -103,8 +103,9 @@ public abstract class Packet implements JSONAware
 					Actor.ActorType actorType = Actor.ActorType
 							.valueOf((String) ((JSONObject) obj.get("actor")).get("type"));
 					String symbol = (String) ((JSONObject) obj.get("actor")).get("symbol");
+					int color = ((Long) ((JSONObject) obj.get("actor")).get("color")).intValue();
 
-					Actor actor = new Actor(id, health, new Point3D(x, y, z), name, actorType, symbol);
+					Actor actor = new Actor(id, health, new Point3D(x, y, z), name, actorType, symbol, color);
 
 					return new ActorPacket(((Long) obj.get("packetID")).intValue(), actor);
 				}

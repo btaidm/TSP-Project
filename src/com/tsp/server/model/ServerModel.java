@@ -198,6 +198,7 @@ public class ServerModel implements Runnable
 
 	public void removePlayer(Integer playerID)
 	{
+		System.out.println("Removing " + players.get(playerID));
 		players.remove(playerID);
 	}
 }

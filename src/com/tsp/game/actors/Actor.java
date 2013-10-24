@@ -40,6 +40,11 @@ public class Actor implements JSONAware
 		return (int) pos.getY();
 	}
 
+	public int getColor()
+	{
+		return color;
+	}
+
 	public enum ActorType
 	{
 		ACTOR_PLAYER,
@@ -49,7 +54,7 @@ public class Actor implements JSONAware
 	String name;
 	int id;
 	int health;
-	int color;
+	int color = 255;
 	ActorType type;
 	String symbol;
 
@@ -61,7 +66,7 @@ public class Actor implements JSONAware
 		count++;
 	}
 
-	public Actor(int id, int health, Point3D pos, String name, ActorType type, String symbol)
+	public Actor(int id, int health, Point3D pos, String name, ActorType type, String symbol, int color)
 	{
 		this.id = id;
 		this.name = name;
@@ -69,6 +74,7 @@ public class Actor implements JSONAware
 		this.health = health;
 		this.type = type;
 		this.symbol = symbol;
+		this.color = color;
 	}
 
 	boolean checkHit(int x, int y, int z)
@@ -151,6 +157,7 @@ public class Actor implements JSONAware
 		jb.put("health",health);
 		jb.put("type", type.toString());
 		jb.put("symbol", symbol);
+		jb.put("color", color);
 		return jb.toString();
 	}
 

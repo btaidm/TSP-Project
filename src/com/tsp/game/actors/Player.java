@@ -23,6 +23,7 @@ public class Player extends Actor
 		playerCount++;
 		name = "Player " + playerCount;
 		symbol = "@";
+		color = (int)(Math.random()*254) + 1;
 	}
 
 	public Player(String _name, int COLS, int ROWS, int LVLS)
@@ -34,6 +35,7 @@ public class Player extends Actor
 		health = 10;
 		playerCount++;
 		symbol = "@";
+		color = (int)(Math.random()*254) + 1;
 	}
 
 
