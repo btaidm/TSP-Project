@@ -71,14 +71,14 @@ public abstract class Packet implements JSONAware
 			{
 				case MOVEMENTPACKET:
 				{
-					if (!(obj.containsKey("playerID") && obj.containsKey("moveX") && obj.containsKey("moveY") &&
-					      obj.containsKey("attack") && obj.containsKey("attackX") && obj.containsKey("attackY")))
+					if (!(obj.containsKey("playerID") && obj.containsKey("X") && obj.containsKey("Y") && obj.containsKey("Z")))
 						throw new IllegalArgumentException("Not a valid Movement packet");
 
 					return new MovementPacket(((Long) obj.get("packetID")).intValue(),
 					                          ((Long) obj.get("playerID")).intValue(),
-					                          ((Long) obj.get("moveX")).intValue(),
-					                          ((Long) obj.get("moveY")).intValue());
+					                          ((Long) obj.get("X")).intValue(),
+					                          ((Long) obj.get("Y")).intValue(),
+					                          ((Long) obj.get("Z")).intValue());
 				}
 				case ACTORPACKET:
 				{
@@ -89,7 +89,7 @@ public abstract class Packet implements JSONAware
 					      ((JSONObject) obj.get("player")).containsKey("Z") &&
 					      ((JSONObject) obj.get("player")).containsKey("health") &&
 					      ((JSONObject) obj.get("player")).containsKey("type") &&
-					    ((JSONObject) obj.get("player")).containsKey("symbol")))
+					      ((JSONObject) obj.get("player")).containsKey("symbol")))
 						throw new IllegalArgumentException("Not a valid actor packet");
 
 

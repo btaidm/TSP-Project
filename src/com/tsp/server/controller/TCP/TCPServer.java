@@ -29,7 +29,6 @@ public class TCPServer extends Thread
 	public TCPServer(ServerModel sm) throws IOException
 	{
 		serverSocket = new ServerSocket(12000);
-		clientSocket = serverSocket.accept();
 		serverModel = sm;
 	}
 

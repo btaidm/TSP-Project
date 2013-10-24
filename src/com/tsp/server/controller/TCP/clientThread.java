@@ -6,6 +6,8 @@ import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
@@ -23,6 +25,7 @@ import java.util.Queue;
  */
 class clientThread extends Thread
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(clientThread.class);
 
 	private String clientName = null;
 	private DataInputStream is = null;
@@ -80,7 +83,7 @@ class clientThread extends Thread
 		clientThread[] threads = this.threads;
 		try
 		{
-			clientSocket.setSoTimeout(100);
+
 		   /*
 		    * Create input and output streams for this client.
 	        */
@@ -106,7 +109,8 @@ class clientThread extends Thread
 				}
 				playerID = serverModel.addPlayer(PlayName);
 				os.writeInt(playerID);
-				sendDungeon(serverModel.getDungeon());
+				sendDungeon(serverModel.getDungeonArray());
+				sendPlayer();
 				sendActors();
 			}
 
@@ -144,15 +148,27 @@ class clientThread extends Thread
 		}
 	}
 
-	private void processIncoming() throws IOException
+	private void sendPlayer() throws IOException
 	{
-		String json = is.readUTF();
-		Object object = JSONValue.parse(json);
-		if (object != null && object instanceof JSONObject)
+		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
+		os.writeUTF(player.toJSONString());
+	}
+
+	private void processIncoming()
+	{
+		try
 		{
-			Packet packet = Packet.parseJSONObject((JSONObject) object);
-			if (packet.getPacketType() == Packet.PacketType.QUITPACKET)
-				running = false;
+			String json = is.readUTF();
+			Object object = JSONValue.parse(json);
+			if (object != null && object instanceof JSONObject)
+			{
+				Packet packet = Packet.parseJSONObject((JSONObject) object);
+					if (packet.getPacketType() == Packet.PacketType.QUITPACKET)
+						running = false;
+			}
+		}
+		catch (IOException e)
+		{
 		}
 	}
 
@@ -199,7 +215,7 @@ class clientThread extends Thread
 		for (int z = 0; z < serverModel.getFloors(); z++)
 			for (int x = 0; x < serverModel.getColumns(); x++)
 				for (int y = 0; y < serverModel.getRows(); y++)
-					os.writeUTF(strings[x][y][z]);
+					os.writeUTF(strings[z][x][y]);
 	}
 
 	private void sendBytes(byte[] myByteArray) throws IOException
@@ -223,6 +239,7 @@ class clientThread extends Thread
 
 	private void sendActors() throws IOException
 	{
+		LOGGER.info("{}: {}: {}: Sending Actors", Thread.currentThread().getName(),Thread.currentThread().getId(), this.getClass());
 		ArrayList<Actor> actors = serverModel.getActors();
 		for (Actor actor : actors)
 		{

@@ -15,6 +15,21 @@ import org.json.simple.JSONObject;
  */
 public class Actor implements JSONAware
 {
+	public ActorType getType()
+	{
+		return type;
+	}
+
+	public String getSymbol()
+	{
+		return symbol;
+	}
+
+	public int getZ()
+	{
+		return pos.getZ();
+	}
+
 	public enum ActorType
 	{
 		ACTOR_PLAYER,
@@ -120,8 +135,8 @@ public class Actor implements JSONAware
 		JSONObject jb = new JSONObject();
 		jb.put("name",this.name);
 		jb.put("id",id);
-		jb.put("X",pos.getX());
-		jb.put("Y",pos.getY());
+		jb.put("X",((int)pos.getX()));
+		jb.put("Y",((int)pos.getY()));
 		jb.put("Z",pos.getZ());
 		jb.put("health",health);
 		jb.put("type", type.toString());

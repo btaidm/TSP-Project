@@ -2,11 +2,13 @@ package com.tsp.server.model;
 
 import com.tsp.game.actors.AI;
 import com.tsp.game.actors.Actor;
-import com.tsp.game.map.MapGenerator;
+import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
 import com.tsp.game.actors.Player;
 import com.tsp.packets.Packet;
 import com.tsp.server.controller.TCP.TCPServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,13 +26,16 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class ServerModel implements Runnable
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ServerModel.class);
 
-	String[][][] dungeon;
+	Dungeon dungeon;
 
 	//Dungeon properties
 	private final int ROWS = 24;
 	private final int COLS = 80;
 	private final int FLOORS = 4;
+
+	boolean running = true;
 
 	ConcurrentHashMap<Integer, Player> players;
 	HashMap<Integer, AI> ais;
@@ -40,7 +45,9 @@ public class ServerModel implements Runnable
 
 	public ServerModel()
 	{
+		LOGGER.info("New Server Model");
 		players = new ConcurrentHashMap<Integer, Player>();
+		ais = new HashMap<Integer, AI>();
 		otherActors = new HashMap<Integer, Actor>();
 		incomingPackets = new LinkedBlockingQueue<Packet>();
 		outgoingPackets = new LinkedList<Packet>();
@@ -50,9 +57,10 @@ public class ServerModel implements Runnable
 
 	public int addPlayer(String playName)
 	{
+		LOGGER.info("{}: {}: Model: Adding player: {}", Thread.currentThread().getName(),Thread.currentThread().getId(), playName);
 		Player player = new Player(playName, COLS, ROWS, FLOORS);
 		Point3D point3D = player.getPos();
-		while (!(dungeon[(int) point3D.getX()][(int) point3D.getY()][point3D.getZ()].equals(EMPTY_FLOOR)))
+		while (!dungeon.walkableTile(point3D))
 		{
 			player.newPosition(COLS, ROWS, FLOORS);
 		}
@@ -60,50 +68,51 @@ public class ServerModel implements Runnable
 		return player.getId();
 	}
 
-	public Point3D getPlayerPos(int id)
+
+	public String[][][] getDungeonArray()
 	{
-		return players.get(id).getPos();
+		LOGGER.info("{}: {}: Model: Getting Dungeon Map Array", Thread.currentThread().getName(),Thread.currentThread().getId());
+		return dungeon.getDungeon();
 	}
 
-	public String[][][] getDungeon()
+	public Dungeon getDungeon()
 	{
+		LOGGER.info("{}: {}: Model: Getting Dungeon Object", Thread.currentThread().getName(),Thread.currentThread().getId());
 		return dungeon;
 	}
 
 	public void generateDungeon()
 	{
-		MapGenerator f = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
-		dungeon = f.getMap(FLOORS, ROWS, COLS);
+		LOGGER.info("{}: {}: Model: Generating new dungeon", Thread.currentThread().getName(),Thread.currentThread().getId());
+		dungeon = new Dungeon();
+		LOGGER.info("Dungeon[{}][{}][{}]",dungeon.getDungeon().length,dungeon.getDungeon()[0].length,dungeon.getDungeon()[0][0].length);
+
 	}
 
 	public int getColumns()
 	{
-		return COLS;
+		return dungeon.getColumns();
 	}
 
 	public int getFloors()
 	{
-		return FLOORS;
+		return dungeon.getFloors();
 	}
 
 	public int getRows()
 	{
-		return ROWS;
+		return dungeon.getRows();
 	}
 
 	public Player getPlayer(Integer playerID)
 	{
+		LOGGER.info("{}: {}: Model: get player id: {}", Thread.currentThread().getName(),Thread.currentThread().getId(), playerID);
 		return players.get(playerID);
-	}
-
-	public int addPlayer(Player player)
-	{
-		players.put(player.getId(), player);
-		return player.getId();
 	}
 
 	public ArrayList<Actor> getActors()
 	{
+		LOGGER.info("{}: {}: Model: Getting Actors", Thread.currentThread().getName(),Thread.currentThread().getId());
 		ArrayList<Actor> actors = new ArrayList<Actor>(otherActors.values());
 		actors.addAll(players.values());
 		actors.addAll(ais.values());
@@ -113,16 +122,25 @@ public class ServerModel implements Runnable
 	@Override
 	public void run()
 	{
-		while (true)
+		while (running)
 		{
 			processPackets();
 			processAI();
 			sendPackets();
+			try
+			{
+				Thread.sleep(20);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			}
 		}
 	}
 
 	private void sendPackets()
 	{
+		//LOGGER.info("{}: {}: Model: Processing Outgoing Packets", Thread.currentThread().getName(),Thread.currentThread().getId());
 		while (!outgoingPackets.isEmpty())
 		{
 			TCPServer.addOutGoingPacket(outgoingPackets.poll());
@@ -131,14 +149,15 @@ public class ServerModel implements Runnable
 
 	private void processAI()
 	{
+		//LOGGER.info("{}: {}: Model: AI turns", Thread.currentThread().getName(),Thread.currentThread().getId());
 		for(AI ai : ais.values())
 		{
-			ai.turn(dungeon, );
+			ai.turn(dungeon, getActors());
 		}
 	}
 
 	private void processPackets()
 	{
-		//To change body of created methods use File | Settings | File Templates.
+		//LOGGER.info("{}: {}: Model: Processing Incoming Packets", Thread.currentThread().getName(),Thread.currentThread().getId());
 	}
 }

@@ -1,5 +1,6 @@
 package com.tsp.game.actors;
 
+import com.tsp.game.map.Dungeon;
 import com.tsp.packets.Packet;
 
 import java.util.ArrayList;
@@ -18,5 +19,5 @@ public abstract class AI extends Actor
 		super();
 		type = ActorType.ACTOR_AI;
 	}
-	public abstract Packet turn(String[][][] dungeon, ArrayList<Actor> actors);
+	public abstract Packet turn(Dungeon dungeon, ArrayList<Actor> actors);
 }

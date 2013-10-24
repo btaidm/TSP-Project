@@ -1,6 +1,7 @@
 package com.tsp.client.view;
 
 import java.awt.Point;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -31,37 +32,50 @@ public class GameView implements Listenable
 	boolean attacked = false;
 	private TCPClient tcpClient;
 
-	public GameView(GameModel model, TCPClient tcpClient)
+	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
-
-		this.term = new SwingTerminal();
-		this.term.init("TSP Rouglike", 25, 80);
-
-		this.curses = new CursesLikeAPI(this.term);
-		this.curses.resize(24, 80);
-
-		ColorPalette palette = new ColorPalette();
-		palette.addAll(ColorNames.XTERM_256_COLORS, false);
-		palette.putMapping(ColorNames.SVG_COLORS);
-
-		this.curses.setPalette(palette);
 
 		this.model = model;
 		this.tcpClient = tcpClient;
 		this.listeners = new ArrayList<GameListener>();
+		if (setUp())
+		{
+			this.term = new SwingTerminal();
+			this.term.init("TSP Rouglike", 25, 80);
+
+			this.curses = new CursesLikeAPI(this.term);
+			this.curses.resize(24, 80);
+
+			ColorPalette palette = new ColorPalette();
+			palette.addAll(ColorNames.XTERM_256_COLORS, false);
+			palette.putMapping(ColorNames.SVG_COLORS);
+
+			this.curses.setPalette(palette);
+		}
+
 	}
 
-	public void setUp()
+	public boolean setUp() throws InterruptedException
 	{
-		tcpClient.
+		tcpClient.start();
+		while (!model.getReady() && !model.getQuit())
+		{
+			Thread.sleep(20);
+		}
+		if (model.getQuit())
+		{
+			quit = true;
+			return false;
+		}
+		return true;
 	}
 
 
-	public void play()
+	public void play() throws IOException
 	{
 		// Main loop of the game happens here
 		int ch = BlackenKeys.NO_KEY;
-		while (!quit)
+		while (!quit && !model.getQuit())
 		{
 			ch = this.curses.getch(50);
 			process(ch);
@@ -69,14 +83,18 @@ public class GameView implements Listenable
 
 			fireEvent(EventType.TURN_END, new HashMap<String, Object>());
 		}
-		curses.quit();
-		term.quit();
+
 		this.close();
 	}
 
-	private void close()
+	private void close() throws IOException
 	{
+		if (curses != null)
+			curses.quit();
 
+		if (term != null)
+			term.quit();
+		tcpClient.sendQuit();
 	}
 
 	public void refresh()
@@ -85,14 +103,14 @@ public class GameView implements Listenable
 		this.curses.setCursorLocation(-1, -1);
 
 		int zLevel = this.model.getCurrentLevel();
-		
+
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.dungeonRows(); i++)
 		{
 			for (int j = 0; j < this.model.dungeonCols(); j++)
 			{
 				int color = 255;
-				if(this.model.getPlayerLocation().equals(new Point3D(j,i,zLevel)))
+				if (this.model.getPlayerLocation().equals(new Point3D(j, i, zLevel)))
 				{
 					color = 255 / 2;
 				}
@@ -108,7 +126,7 @@ public class GameView implements Listenable
 		{
 			case BlackenKeys.NO_KEY:
 			{
-				if(attacked)
+				if (attacked)
 				{
 					model.resetAttack();
 				}

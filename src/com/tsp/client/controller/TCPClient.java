@@ -5,10 +5,10 @@ import com.tsp.game.actors.Actor;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.Packet;
 import com.tsp.packets.QuitPacket;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,12 +26,56 @@ import java.util.ArrayList;
  */
 public class TCPClient extends Thread
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TCPClient.class);
 	GameModel model;
 	InetAddress addr;
 	int port = 12000;
 	Socket clientSocket;
 	DataInputStream is;
 	DataOutputStream os;
+	boolean running = true;
+
+	@Override
+	public void run()
+	{
+		try
+		{
+			connect();
+			sendName(model.getName());
+			model.setID(getID());
+			model.setDungeon(getDungeon());
+			model.setMe(getPlayer());
+			model.setReady(true);
+			while (running)
+			{
+				synchronized (this)
+				{
+					model.insertPacket(getPacket());
+				}
+			}
+		}
+		catch (IOException e)
+		{
+			LOGGER.info("{}", e);
+			model.setQuit(true);
+		}
+	}
+
+	private Actor getPlayer() throws IOException
+	{
+		String json = is.readUTF();
+		Object object = JSONValue.parse(json);
+		if (object != null && object instanceof JSONObject)
+		{
+			Packet packet = Packet.parseJSONObject((JSONObject) object);
+			if (packet.getPacketType() == Packet.PacketType.ACTORPACKET)
+				if(((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
+				{
+					return ((ActorPacket) packet).getActor();
+				}
+		}
+		return null;
+	}
 
 	public TCPClient(GameModel model) throws UnknownHostException
 	{
@@ -77,22 +120,47 @@ public class TCPClient extends Thread
 		int Columns = is.readInt();
 		int Rows = is.readInt();
 		int Floors = is.readInt();
-		String[][][] dungeon = new String[Columns][Rows][Floors];
+		String[][][] dungeon = new String[Floors][Columns][Rows];
 		for (int z = 0; z < Floors; z++)
 			for (int x = 0; x < Columns; x++)
 				for (int y = 0; y < Rows; y++)
-					dungeon[x][y][z] = is.readUTF();
+					dungeon[z][x][y] = is.readUTF();
 		return dungeon;
 	}
 
-	public
+	public Packet getPacket()
+	{
+		try
+		{
+			String json = is.readUTF();
+			Object object = JSONValue.parse(json);
+			if (object != null && object instanceof JSONObject)
+			{
+				Packet packet = Packet.parseJSONObject((JSONObject) object);
+				return packet;
+			}
+		}
+		catch (IOException e)
+		{
+			LOGGER.info("{}", e);
+			return null;
+		}
+		return null;
+	}
 
 	public void sendQuit() throws IOException
 	{
-		os.writeUTF(new QuitPacket().toJSONString());
-		os.close();
-		is.close();
-		clientSocket.close();
+		if (os != null)
+		{
+			os.writeUTF(new QuitPacket().toJSONString());
+			os.close();
+		}
+
+		if (is != null)
+			is.close();
+
+		if (clientSocket != null)
+			clientSocket.close();
 	}
 
 
