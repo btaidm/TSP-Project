@@ -42,16 +42,34 @@ public class TCPClient extends Thread
 		{
 			connect();
 			sendName(model.getName());
-			model.setID(getID());
-			model.setDungeon(getDungeon());
-			model.setMe(getPlayer());
-			model.setReady(true);
-			clientSocket.setSoTimeout(100);
-			while (running)
+			int id = this.getID();
+			if (id == -1)
 			{
-				synchronized (this)
+				model.setQuit(true);
+				while (running)
 				{
-					model.insertPacket(getPacket());
+					try
+					{
+						Thread.sleep(10);
+					}
+					catch (Exception e)
+					{
+					}
+				}
+			}
+			else
+			{
+				model.setID(id);
+				model.setDungeon(getDungeon());
+				model.setMe(getPlayer());
+				model.setReady(true);
+				clientSocket.setSoTimeout(100);
+				while (running)
+				{
+					synchronized (this)
+					{
+						model.insertPacket(getPacket());
+					}
 				}
 			}
 		}
@@ -69,8 +87,8 @@ public class TCPClient extends Thread
 		if (object != null && object instanceof JSONObject)
 		{
 			Packet packet = Packet.parseJSONObject((JSONObject) object);
-			if (packet.getPacketType() == Packet.PacketType.ACTORPACKET)
-				if(((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
+			if (packet.getPacketType() == Packet.PacketType.ACTOR_PACKET)
+				if (((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
 				{
 					return ((ActorPacket) packet).getActor();
 				}

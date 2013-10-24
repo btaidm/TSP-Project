@@ -15,6 +15,7 @@ import org.json.simple.JSONObject;
  */
 public class Actor implements JSONAware
 {
+
 	public ActorType getType()
 	{
 		return type;
@@ -43,6 +44,31 @@ public class Actor implements JSONAware
 	public int getColor()
 	{
 		return color;
+	}
+
+	public void setX(Integer x)
+	{
+		pos.x = x;
+	}
+
+	public void setY(Integer y)
+	{
+		pos.y = y;
+	}
+
+	public void setZ(Integer z)
+	{
+		pos.setZ(z);
+	}
+
+	public void setHealth(Integer health)
+	{
+		this.health = health;
+	}
+
+	public void setSymbol(String symbol)
+	{
+		this.symbol = symbol;
 	}
 
 	public enum ActorType
@@ -141,8 +167,8 @@ public class Actor implements JSONAware
 
 	public void newPosition(int COLS, int ROWS, int LVLS)
 	{
-		Random r = new Random();
-		pos = new Point3D(r.nextInt(0, COLS), r.nextInt(0, ROWS), r.nextInt(0,LVLS));
+		java.util.Random r = new java.util.Random();
+		pos = new Point3D(r.nextInt(COLS), r.nextInt(ROWS), r.nextInt(LVLS));
 	}
 
 	@Override

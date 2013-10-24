@@ -1,13 +1,14 @@
 package com.tsp.client.model;
 
 import java.awt.Point;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
 import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
+import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.Packet;
 
 public class GameModel
@@ -25,23 +26,17 @@ public class GameModel
 	Dungeon dungeon;
 
 
-	//Points corresponding to directions
-	public static final Point LEFT = new Point(-1, 0);
-	public static final Point RIGHT = new Point(1, 0);
-	public static final Point UP = new Point(0, -1);
-	public static final Point DOWN = new Point(0, 1);
-
 	//Game tile types
 	private String name = "Player";
 	private int id;
 	private Actor me;
-	private ArrayList<Actor> otherActors;
+	private HashMap<Integer, Actor> otherActors;
 	private boolean ready = false;
 
 
 	public GameModel()
 	{
-		otherActors = new ArrayList<Actor>();
+		otherActors = new HashMap<Integer, Actor>();
 	}
 
 
@@ -67,7 +62,7 @@ public class GameModel
 			return attackAnimation;
 		}
 
-		for (Actor a : otherActors)
+		for (Actor a : otherActors.values())
 		{
 			if (a.getPos().equals(new Point3D(x, y, z)))
 			{
@@ -116,27 +111,28 @@ public class GameModel
 			int x = (int) newPosition.getX();
 			int y = (int) newPosition.getY();
 			int z = newPosition.getZ();
-
-			if (dungeon.isEmptyFloor(x, y, z))
+			if (!occupied(newPosition))
 			{
-				me.setPos(newPosition);
-				return true;
-			}
-			else if (dungeon.isStairUp(x, y, z))
-			{
-				me.setPos(newPosition);
-				me.move(new Point3D(0, 0, 1));
-				return true;
-			}
-			else if (dungeon.isStairDown(x, y, z))
-			{
-				me.setPos(newPosition);
-				me.move(new Point3D(0, 0, -1));
-				return true;
-			}
-			else
-			{
-				// Do nothing here
+				if (dungeon.isEmptyFloor(x, y, z))
+				{
+					me.setPos(newPosition);
+					return true;
+				}
+				else if (dungeon.isStairUp(x, y, z))
+				{
+					me.setPos(newPosition);
+					me.move(new Point3D(0, 0, 1));
+					return true;
+				}
+				else if (dungeon.isStairDown(x, y, z))
+				{
+					me.setPos(newPosition);
+					me.move(new Point3D(0, 0, -1));
+					return true;
+				}
+				else
+				{
+				}
 			}
 		}
 		return false;
@@ -168,7 +164,7 @@ public class GameModel
 			attackCounter = ATTACK_COUNTER_MAX;
 
 			//Calculate the attack animation
-			if (delta.equals(UP) || delta.equals(DOWN))
+			if (delta.equals(Point3D.UP) || delta.equals(Point3D.DOWN))
 				attackAnimation = "|";
 			else
 				attackAnimation = "-";
@@ -274,7 +270,7 @@ public class GameModel
 		}
 
 
-		for (Actor a : otherActors)
+		for (Actor a : otherActors.values())
 		{
 			if (a.getPos().equals(new Point3D(x, y, z)))
 			{
@@ -283,8 +279,54 @@ public class GameModel
 		}
 
 
-		if(dungeon.isStairUp(x,y,z) || dungeon.isStairDown(x, y, z))
+		if (dungeon.isStairUp(x, y, z) || dungeon.isStairDown(x, y, z))
 			return (int) (255.0 / 2);
 		return 255;
+	}
+
+	public boolean hasPackets()
+	{
+		return !packets.isEmpty();
+	}
+
+	public void update(ActorUpdate actorUpdate)
+	{
+		if (otherActors.containsKey(actorUpdate.getActorID()))
+		{
+			if (actorUpdate.contains("remove"))
+			{
+				otherActors.remove(actorUpdate.getActorID());
+			}
+			else
+			{
+				if (actorUpdate.contains("X"))
+					otherActors.get(actorUpdate.getActorID()).setX(((Long) actorUpdate.getValue("X")).intValue());
+				if (actorUpdate.contains("Y"))
+					otherActors.get(actorUpdate.getActorID()).setY(((Long) actorUpdate.getValue("Y")).intValue());
+				if (actorUpdate.contains("Z"))
+					otherActors.get(actorUpdate.getActorID()).setZ(((Long) actorUpdate.getValue("Z")).intValue());
+				if (actorUpdate.contains("health"))
+					otherActors.get(actorUpdate.getActorID())
+							.setHealth(((Long) actorUpdate.getValue("health")).intValue());
+				if (actorUpdate.contains("symbol"))
+					otherActors.get(actorUpdate.getActorID()).setSymbol((String) actorUpdate.getValue("symbol"));
+			}
+		}
+	}
+
+	public void addActor(Actor actor)
+	{
+		if (actor.getId() != me.getId() && !otherActors.containsKey(actor.getId()))
+			otherActors.put(actor.getId(), actor);
+	}
+
+	private boolean occupied(Point3D point)
+	{
+		for (Actor actor : otherActors.values())
+		{
+			if (actor.getPos().equals(point))
+				return true;
+		}
+		return false;
 	}
 }

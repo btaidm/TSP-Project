@@ -13,7 +13,7 @@ public class QuitPacket extends Packet
 {
 	public QuitPacket()
 	{
-		packetType = PacketType.QUITPACKET;
+		packetType = PacketType.QUIT_PACKET;
 	}
 
 	@Override

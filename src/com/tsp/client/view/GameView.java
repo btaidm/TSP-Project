@@ -19,7 +19,9 @@ import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Point3D;
-import com.tsp.server.controller.TCP.TCPServer;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.ActorUpdate;
+import com.tsp.packets.Packet;
 
 public class GameView implements Listenable
 {
@@ -43,6 +45,7 @@ public class GameView implements Listenable
 		if (setUp())
 		{
 			this.term = new SwingTerminal();
+
 			this.term.init("TSP Rouglike", 25, 80);
 
 			this.curses = new CursesLikeAPI(this.term);
@@ -79,6 +82,7 @@ public class GameView implements Listenable
 		int ch = BlackenKeys.NO_KEY;
 		while (!quit && !model.getQuit())
 		{
+			processPackets();
 			ch = this.curses.getch(50);
 			process(ch);
 			refresh();
@@ -87,6 +91,27 @@ public class GameView implements Listenable
 		}
 
 		this.close();
+	}
+
+	private void processPackets()
+	{
+		while(model.hasPackets())
+		{
+			Packet packet = model.getPacket();
+			switch (packet.getPacketType())
+			{
+				case ACTOR_PACKET:
+					ActorPacket actorPacket = (ActorPacket)packet;
+					model.addActor(actorPacket.getActor());
+					break;
+				case UPDATE_PACKET:
+					ActorUpdate actorUpdate = (ActorUpdate)packet;
+					model.update(actorUpdate);
+					break;
+				default:
+					break;
+			}
+		}
 	}
 
 	private void close() throws IOException
@@ -111,7 +136,6 @@ public class GameView implements Listenable
 		{
 			for (int j = 0; j < this.model.dungeonCols(); j++)
 			{
-
 				this.term.set(i, j, this.model.get(i, j, zLevel), model.getColor(j, i, zLevel), 0);
 			}
 		}
@@ -137,42 +161,42 @@ public class GameView implements Listenable
 				break;
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
-				moved = this.model.attemptMove(GameModel.DOWN);
+				moved = this.model.attemptMove(Point3D.DOWN);
 				break;
 			case BlackenKeys.KEY_UP:
 			case 'k':
-				moved = this.model.attemptMove(GameModel.UP);
+				moved = this.model.attemptMove(Point3D.UP);
 				break;
 			case BlackenKeys.KEY_LEFT:
 			case 'h':
-				moved = this.model.attemptMove(GameModel.LEFT);
+				moved = this.model.attemptMove(Point3D.LEFT);
 				break;
 			case BlackenKeys.KEY_RIGHT:
 			case 'l':
-				moved = this.model.attemptMove(GameModel.RIGHT);
+				moved = this.model.attemptMove(Point3D.RIGHT);
 				break;
 			case 'a':
-				if(attacked = this.model.attemptAttack(GameModel.LEFT))
+				if(attacked = this.model.attemptAttack(Point3D.LEFT))
 				{
-					attackDelta = GameModel.LEFT;
+					attackDelta = Point3D.LEFT;
 				}
 				break;
 			case 'd':
-				if(attacked = this.model.attemptAttack(GameModel.RIGHT))
+				if(attacked = this.model.attemptAttack(Point3D.RIGHT))
 				{
-					attackDelta = GameModel.RIGHT;
+					attackDelta = Point3D.RIGHT;
 				}
 				break;
 			case 's':
-				if(attacked = this.model.attemptAttack(GameModel.DOWN))
+				if(attacked = this.model.attemptAttack(Point3D.DOWN))
 				{
-					attackDelta = GameModel.DOWN;
+					attackDelta = Point3D.DOWN;
 				}
 				break;
 			case 'w':
-				if(attacked = this.model.attemptAttack(GameModel.UP))
+				if(attacked = this.model.attemptAttack(Point3D.UP))
 				{
-					attackDelta = GameModel.UP;
+					attackDelta = Point3D.UP;
 				}
 				break;
 		}

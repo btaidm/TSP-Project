@@ -1,5 +1,9 @@
 package com.tsp.game.map;
 
+import com.tsp.game.actors.Actor;
+
+import java.util.Collection;
+
 /**
  * Created with IntelliJ IDEA.
  * User: Tim
@@ -143,21 +147,49 @@ public class Dungeon
 
 	public boolean isEmptyFloor(int x, int y, int z)
 	{
-		return isEmptyFloor(new Point3D(x,y,z));
+		return isEmptyFloor(new Point3D(x, y, z));
 	}
 
 	public boolean isStairUp(int x, int y, int z)
 	{
-		return isStairUp(new Point3D(x,y,z));
+		return isStairUp(new Point3D(x, y, z));
 	}
 
 	public boolean isWall(int x, int y, int z)
 	{
-		return isWall(new Point3D(x,y,z));
+		return isWall(new Point3D(x, y, z));
 	}
 
 	public boolean isStairDown(int x, int y, int z)
 	{
-		return isStairDown(new Point3D(x,y,z));
+		return isStairDown(new Point3D(x, y, z));
+	}
+
+	public Point3D findFirstWalkablePoint(Collection<Actor> actors) throws Exception
+	{
+		for (int z = 0; z < this.floors; z++)
+		{
+			for (int x = 0; x < this.cols; x++)
+			{
+				for (int y = 0; y < this.rows; y++)
+				{
+					if (walkableTile(x, y, z) && !occupied(x,y,z,actors))
+					{
+						return new Point3D(x,y,z);
+					}
+				}
+			}
+		}
+		throw new Exception("No point available");
+	}
+
+	private boolean occupied(int x, int y, int z, Collection<Actor> actors)
+	{
+		for (Actor actor : actors)
+		{
+			if (actor.getPos().equals(new Point3D(x, y, z)))
+				return true;
+		}
+		return false;
 	}
 }

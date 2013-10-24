@@ -35,23 +35,30 @@ public class TCPServer extends Thread
 	@Override
 	public void run()
 	{
-		while (true) {
-			try {
+		while (true)
+		{
+			try
+			{
 				clientSocket = serverSocket.accept();
 				int i = 0;
-				for (i = 0; i < maxClientsCount; i++) {
-					if (threads[i] == null) {
+				for (i = 0; i < maxClientsCount; i++)
+				{
+					if (threads[i] == null)
+					{
 						(threads[i] = new clientThread(clientSocket, threads, serverModel)).start();
 						break;
 					}
 				}
-				if (i == maxClientsCount) {
+				if (i == maxClientsCount)
+				{
 					PrintStream os = new PrintStream(clientSocket.getOutputStream());
 					os.println("Server too busy. Try later.");
 					os.close();
 					clientSocket.close();
 				}
-			} catch (IOException e) {
+			}
+			catch (IOException e)
+			{
 				System.out.println(e);
 			}
 		}
@@ -59,6 +66,12 @@ public class TCPServer extends Thread
 
 	public static void addOutGoingPacket(Packet e)
 	{
-		threads[0].addOutGoingPacket(e);
+		for (int i = 0; i < maxClientsCount; i++)
+		{
+			if (threads[i] != null)
+			{
+				threads[i].addOutGoingPacket(e);
+			}
+		}
 	}
 }

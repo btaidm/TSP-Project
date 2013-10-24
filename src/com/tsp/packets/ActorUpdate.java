@@ -14,19 +14,40 @@ import java.util.Map;
  */
 public class ActorUpdate extends Packet
 {
-	HashMap<String,Object> data;
 
-	public ActorUpdate()
+	HashMap<String,Object> data;
+	int actorID;
+
+
+	private void setUp()
 	{
-		packetType = PacketType.UPDATEPACKET;
+		packetType = PacketType.UPDATE_PACKET;
 		data = new HashMap<String, Object>();
 	}
 
-	public Object getValue(String key) throws IllegalArgumentException
+	public ActorUpdate(int actorID)
+	{
+		this.actorID = actorID;
+		setUp();
+	}
+
+	public ActorUpdate(Integer _packetID, int actorID)
+	{
+		super(_packetID);
+		this.actorID = actorID;
+		setUp();
+	}
+
+	public boolean contains(String key)
+	{
+		return data.containsKey(key);
+	}
+
+	public Object getValue(String key)
 	{
 		if(data.containsKey(key))
 			return data.get(key);
-		throw new IllegalArgumentException("Key does not exist");
+		return null;
 	}
 
 	public void insertValue(String key, Object value)
@@ -39,12 +60,15 @@ public class ActorUpdate extends Packet
 		data.putAll(jsonObject);
 	}
 
+
 	@Override
 	public String toJSONString()
 	{
 		JSONObject jsonObject = new JSONObject(data);
 		jsonObject.put("packetID", packetID);
 		jsonObject.put("packetType",packetType.toString());
+		jsonObject.put("actorID", actorID);
+
 		return jsonObject.toJSONString();
 	}
 
@@ -67,5 +91,10 @@ public class ActorUpdate extends Packet
 		}
 		sb.append("}}");
 		return sb.toString();
+	}
+
+	public Integer getActorID()
+	{
+		return actorID;
 	}
 }

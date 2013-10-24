@@ -23,14 +23,14 @@ public class ActorPacket extends Packet
 	{
 		super( _packetID);
 		this.actor = character;
-		this.packetType = PacketType.ACTORPACKET;
+		this.packetType = PacketType.ACTOR_PACKET;
 	}
 
 	public ActorPacket(Actor character)
 	{
 		super();
 		this.actor = character;
-		this.packetType = PacketType.ACTORPACKET;
+		this.packetType = PacketType.ACTOR_PACKET;
 	}
 
 	@Override

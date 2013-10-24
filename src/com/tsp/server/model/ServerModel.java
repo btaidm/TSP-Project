@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created with IntelliJ IDEA.
@@ -57,12 +56,33 @@ public class ServerModel implements Runnable
 
 	public int addPlayer(String playName)
 	{
-		LOGGER.info("{}: {}: Model: Adding player: {}", Thread.currentThread().getName(),Thread.currentThread().getId(), playName);
+		LOGGER.info("{}: {}: Model: Adding player: {}",
+		            Thread.currentThread().getName(),
+		            Thread.currentThread().getId(),
+		            playName);
 		Player player = new Player(playName, COLS, ROWS, FLOORS);
 		Point3D point3D = player.getPos();
-		while (!dungeon.walkableTile(point3D))
+		boolean spotFound = false;
+		for (int time = 0; time < 30; time++)
 		{
+			if (dungeon.walkableTile(player.getPos()))
+			{
+				spotFound = true;
+				break;
+			}
 			player.newPosition(COLS, ROWS, FLOORS);
+		}
+
+		if (!spotFound)
+		{
+			try
+			{
+				player.setPos(dungeon.findFirstWalkablePoint(this.getActors()));
+			}
+			catch (Exception e)
+			{
+				return -1;
+			}
 		}
 		players.put(player.getId(), player);
 		return player.getId();
@@ -71,21 +91,30 @@ public class ServerModel implements Runnable
 
 	public String[][][] getDungeonArray()
 	{
-		LOGGER.info("{}: {}: Model: Getting Dungeon Map Array", Thread.currentThread().getName(),Thread.currentThread().getId());
+		LOGGER.info("{}: {}: Model: Getting Dungeon Map Array",
+		            Thread.currentThread().getName(),
+		            Thread.currentThread().getId());
 		return dungeon.getDungeon();
 	}
 
 	public Dungeon getDungeon()
 	{
-		LOGGER.info("{}: {}: Model: Getting Dungeon Object", Thread.currentThread().getName(),Thread.currentThread().getId());
+		LOGGER.info("{}: {}: Model: Getting Dungeon Object",
+		            Thread.currentThread().getName(),
+		            Thread.currentThread().getId());
 		return dungeon;
 	}
 
 	public void generateDungeon()
 	{
-		LOGGER.info("{}: {}: Model: Generating new dungeon", Thread.currentThread().getName(),Thread.currentThread().getId());
+		LOGGER.info("{}: {}: Model: Generating new dungeon",
+		            Thread.currentThread().getName(),
+		            Thread.currentThread().getId());
 		dungeon = new Dungeon();
-		LOGGER.info("Dungeon[{}][{}][{}]",dungeon.getDungeon().length,dungeon.getDungeon()[0].length,dungeon.getDungeon()[0][0].length);
+		LOGGER.info("Dungeon[{}][{}][{}]",
+		            dungeon.getDungeon().length,
+		            dungeon.getDungeon()[0].length,
+		            dungeon.getDungeon()[0][0].length);
 
 	}
 
@@ -106,13 +135,16 @@ public class ServerModel implements Runnable
 
 	public Player getPlayer(Integer playerID)
 	{
-		LOGGER.info("{}: {}: Model: get player id: {}", Thread.currentThread().getName(),Thread.currentThread().getId(), playerID);
+		LOGGER.info("{}: {}: Model: get player id: {}",
+		            Thread.currentThread().getName(),
+		            Thread.currentThread().getId(),
+		            playerID);
 		return players.get(playerID);
 	}
 
 	public ArrayList<Actor> getActors()
 	{
-		LOGGER.info("{}: {}: Model: Getting Actors", Thread.currentThread().getName(),Thread.currentThread().getId());
+		LOGGER.info("Getting Actors");
 		ArrayList<Actor> actors = new ArrayList<Actor>(otherActors.values());
 		actors.addAll(players.values());
 		actors.addAll(ais.values());
@@ -150,7 +182,7 @@ public class ServerModel implements Runnable
 	private void processAI()
 	{
 		//LOGGER.info("{}: {}: Model: AI turns", Thread.currentThread().getName(),Thread.currentThread().getId());
-		for(AI ai : ais.values())
+		for (AI ai : ais.values())
 		{
 			ai.turn(dungeon, getActors());
 		}
@@ -160,25 +192,29 @@ public class ServerModel implements Runnable
 	{
 		synchronized (this)
 		{
-			while(!incomingPackets.isEmpty())
+			while (!incomingPackets.isEmpty())
 			{
 				Packet packet = incomingPackets.poll();
 				switch (packet.getPacketType())
 				{
 					case MOVEMENTPACKET:
 						MovementPacket movementPacket = (MovementPacket) packet;
+						processMovement(movementPacket);
 						System.out.println(packet.toString());
 						break;
-					case ACTORPACKET:
+					case ACTOR_PACKET:
 						ActorPacket actorPacket = (ActorPacket) packet;
+						processActor(actorPacket);
 						System.out.println(packet.toString());
 						break;
-					case UPDATEPACKET:
+					case UPDATE_PACKET:
 						ActorUpdate actorUpdate = (ActorUpdate) packet;
+						processUpdate(actorUpdate);
 						System.out.println(packet.toString());
 						break;
-					case ATTACKPACKET:
+					case ATTACK_PACKET:
 						AttackPacket attackPacket = (AttackPacket) packet;
+						processAttack(attackPacket);
 						System.out.println(packet.toString());
 						break;
 					default:
@@ -186,6 +222,41 @@ public class ServerModel implements Runnable
 				}
 			}
 		}
+	}
+
+	private void processAttack(AttackPacket attackPacket)
+	{
+		LOGGER.info("Processing attack from playerID: {}", attackPacket.getAttacker());
+		ArrayList<Actor> actors = getActors();
+
+	}
+
+	private void processUpdate(ActorUpdate actorUpdate)
+	{
+		LOGGER.info("Processing update for playerID: {}", actorUpdate.getActorID());
+	}
+
+	private void processActor(ActorPacket actorPacket)
+	{
+		LOGGER.info("Processing Actor");
+	}
+
+	private void processMovement(MovementPacket movementPacket)
+	{
+		LOGGER.info("Processing movement for playerID: {}", movementPacket.getM_playerID());
+
+		if (players.containsKey(movementPacket.getM_playerID()))
+		{
+			players.get(movementPacket.getM_playerID()).setPos(new Point3D(movementPacket.getM_newX(),
+			                                                               movementPacket.getM_newY(),
+			                                                               movementPacket.getM_newZ()));
+			ActorUpdate actorUpdate = new ActorUpdate(movementPacket.getM_playerID());
+			actorUpdate.insertValue("X", movementPacket.getM_newX());
+			actorUpdate.insertValue("Y", movementPacket.getM_newY());
+			actorUpdate.insertValue("Z", movementPacket.getM_newZ());
+			outgoingPackets.add(actorUpdate);
+		}
+
 	}
 
 	public void putIncoming(Packet packet)
@@ -200,5 +271,9 @@ public class ServerModel implements Runnable
 	{
 		System.out.println("Removing " + players.get(playerID));
 		players.remove(playerID);
+		ActorUpdate actorUpdate = new ActorUpdate(playerID);
+		actorUpdate.insertValue("remove","remove");
+
+		outgoingPackets.add(actorUpdate);
 	}
 }

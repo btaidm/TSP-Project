@@ -5,6 +5,10 @@ import com.tsp.game.map.Point3D;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Created with IntelliJ IDEA.
  * User: Tim
@@ -18,10 +22,10 @@ public abstract class Packet implements JSONAware
 	{
 		NOTAPACKET,
 		MOVEMENTPACKET,
-		ACTORPACKET,
-		UPDATEPACKET,
-		ATTACKPACKET,
-		QUITPACKET
+		ACTOR_PACKET,
+		UPDATE_PACKET,
+		ATTACK_PACKET,
+		QUIT_PACKET
 	}
 
 	protected static Integer packetCount = 0;
@@ -81,7 +85,7 @@ public abstract class Packet implements JSONAware
 					                          ((Long) obj.get("Y")).intValue(),
 					                          ((Long) obj.get("Z")).intValue());
 				}
-				case ACTORPACKET:
+				case ACTOR_PACKET:
 				{
 					if (!(obj.containsKey("actor") && ((JSONObject) obj.get("actor")).containsKey("id") &&
 					      ((JSONObject) obj.get("actor")).containsKey("name") &&
@@ -109,17 +113,34 @@ public abstract class Packet implements JSONAware
 
 					return new ActorPacket(((Long) obj.get("packetID")).intValue(), actor);
 				}
-				case QUITPACKET:
+				case QUIT_PACKET:
 					return new QuitPacket();
-				case ATTACKPACKET:
+				case ATTACK_PACKET:
 				{
 					if (!(obj.containsKey("playerID") && obj.containsKey("X") && obj.containsKey("Y")))
 						throw new IllegalArgumentException("Not a valid Attack packet");
 
 					return new AttackPacket(((Long) obj.get("packetID")).intValue(),
-					                          ((Long) obj.get("playerID")).intValue(),
-					                          ((Long) obj.get("X")).intValue(),
-					                          ((Long) obj.get("Y")).intValue());
+					                        ((Long) obj.get("playerID")).intValue(),
+					                        ((Long) obj.get("X")).intValue(),
+					                        ((Long) obj.get("Y")).intValue());
+				}
+				case UPDATE_PACKET:
+				{
+					if (!(obj.containsKey("actorID")))
+						throw new IllegalArgumentException("Not a valid Update packet");
+
+					ActorUpdate actorUpdate = new ActorUpdate(((Long) obj.get("packetID")).intValue(),
+					                                          ((Long) obj.get("actorID")).intValue());
+					Collection jsonKeys = obj.keySet();
+
+					for(Object entry : jsonKeys)
+					{
+						if(entry.equals("packetType") || entry.equals("packetID") || entry.equals("playerID"))
+							continue;
+						actorUpdate.insertValue((String) entry,obj.get(entry));
+					}
+					return actorUpdate;
 				}
 				default:
 					throw new IllegalArgumentException("Not a valid packet");

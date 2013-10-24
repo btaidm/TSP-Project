@@ -54,7 +54,7 @@ public class RespondWorker implements Runnable
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			e.printStackTrace();
 		}
 		Object parsedObject = null;
 		try
@@ -64,7 +64,6 @@ public class RespondWorker implements Runnable
 				{
 					Packet packet1 = Packet.parseJSONObject((JSONObject) parsedObject);
 					model.putIncoming(packet1);
-					System.out.println(packet1.toString());
 				}
 		}
 		catch (ParseException e)

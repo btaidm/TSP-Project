@@ -22,7 +22,7 @@ public class AttackPacket extends Packet
 		this.attacker = attacker;
 		this.deltaX = deltaX;
 		this.deltaY = deltaY;
-		this.packetType = PacketType.ATTACKPACKET;
+		this.packetType = PacketType.ATTACK_PACKET;
 	}
 
 	public AttackPacket(int attacker, int deltaX, int deltaY)
@@ -30,7 +30,7 @@ public class AttackPacket extends Packet
 		this.attacker = attacker;
 		this.deltaX = deltaX;
 		this.deltaY = deltaY;
-		this.packetType = PacketType.ATTACKPACKET;
+		this.packetType = PacketType.ATTACK_PACKET;
 	}
 
 	@Override
@@ -54,5 +54,10 @@ public class AttackPacket extends Packet
 		jb.put("Y", deltaY);
 
 		return jb.toString();
+	}
+
+	public int getAttacker()
+	{
+		return attacker;
 	}
 }

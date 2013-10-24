@@ -57,14 +57,7 @@ class clientThread extends Thread
 	{
 		synchronized (this)
 		{
-			for (int i = 0; i < maxClientsCount; i++)
-			{
-				if (threads[i] != null)
-				{
-					outGoingPackets.add(packet);
-				}
-			}
-
+			outGoingPackets.add(packet);
 		}
 	}
 
@@ -96,27 +89,21 @@ class clientThread extends Thread
 
 			is.read(name);
 
-			String PlayName = BytesToString(name);
+			String PlayName = BytesToString(name).trim();
 			synchronized (this)
 			{
-				for (int i = 0; i < maxClientsCount; i++)
-				{
-					if (threads[i] != null && threads[i] == this)
-					{
-						clientName = "@" + PlayName;
-						break;
-					}
-				}
+				clientName = PlayName;
 				playerID = serverModel.addPlayer(PlayName);
 				os.writeInt(playerID);
 				sendDungeon(serverModel.getDungeonArray());
 				sendPlayer();
+				sendNewPlayer();
 				sendActors();
 			}
 
 
-
-		    /* Start the conversation. */
+			clientSocket.setSoTimeout(100);
+			/* Start the conversation. */
 			while (running)
 			{
 				try
@@ -128,7 +115,6 @@ class clientThread extends Thread
 				}
 				processIncoming();
 				processPackets();
-				break;
 			}
 
 		}
@@ -165,7 +151,7 @@ class clientThread extends Thread
 			if (object != null && object instanceof JSONObject)
 			{
 				Packet packet = Packet.parseJSONObject((JSONObject) object);
-				if (packet.getPacketType() == Packet.PacketType.QUITPACKET)
+				if (packet.getPacketType() == Packet.PacketType.QUIT_PACKET)
 					running = false;
 			}
 		}
@@ -200,14 +186,14 @@ class clientThread extends Thread
 					threads[i] = null;
 				}
 			}
-		}
 	  /*
 	   * Close the output stream, close the input stream, close the socket.
        */
-		serverModel.removePlayer(playerID);
-		is.close();
-		os.close();
-		clientSocket.close();
+			serverModel.removePlayer(playerID);
+			is.close();
+			os.close();
+			clientSocket.close();
+		}
 	}
 
 	private void sendDungeon(String[][][] strings) throws IOException
@@ -242,10 +228,7 @@ class clientThread extends Thread
 
 	private void sendActors() throws IOException
 	{
-		LOGGER.info("{}: {}: {}: Sending Actors",
-		            Thread.currentThread().getName(),
-		            Thread.currentThread().getId(),
-		            this.getClass());
+		LOGGER.info("Sending Actors");
 		ArrayList<Actor> actors = serverModel.getActors();
 		for (Actor actor : actors)
 		{
@@ -257,13 +240,7 @@ class clientThread extends Thread
 	protected void sendNewPlayer() throws IOException
 	{
 		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
-		for (int i = 0; i < maxClientsCount; i++)
-		{
-			if (threads[i] != null && threads[i] != this)
-			{
-				threads[i].addOutGoingPacket(player);
-			}
-		}
+		TCPServer.addOutGoingPacket(player);
 	}
 }
 
