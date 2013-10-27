@@ -1,21 +1,23 @@
 package com.tsp.client.controller;
 
-import com.tsp.client.model.GameModel;
-import com.tsp.game.actors.Actor;
-import com.tsp.packets.ActorPacket;
-import com.tsp.packets.Packet;
-import com.tsp.packets.QuitPacket;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.tsp.client.model.GameModel;
+import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.Packet;
+import com.tsp.packets.QuitPacket;
 
 /**
  * Created with IntelliJ IDEA.
@@ -41,7 +43,8 @@ public class TCPClient extends Thread
 		try
 		{
 			connect();
-			sendName(model.getName());
+			model.setDungeon(getDungeon());
+			sendName(model.getMe().getName());
 			int id = this.getID();
 			if (id == -1)
 			{
@@ -60,7 +63,6 @@ public class TCPClient extends Thread
 			else
 			{
 				model.setID(id);
-				model.setDungeon(getDungeon());
 				model.setMe(getPlayer());
 				model.setReady(true);
 				clientSocket.setSoTimeout(100);
@@ -80,7 +82,7 @@ public class TCPClient extends Thread
 		}
 	}
 
-	private Actor getPlayer() throws IOException
+	private Player getPlayer() throws IOException
 	{
 		String json = is.readUTF();
 		Object object = JSONValue.parse(json);
@@ -90,7 +92,7 @@ public class TCPClient extends Thread
 			if (packet.getPacketType() == Packet.PacketType.ACTOR_PACKET)
 				if (((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
 				{
-					return ((ActorPacket) packet).getActor();
+					return (Player)(((ActorPacket) packet).getActor());
 				}
 		}
 		return null;

@@ -83,6 +83,8 @@ class clientThread extends Thread
 			is = new DataInputStream(clientSocket.getInputStream());
 			os = new DataOutputStream(clientSocket.getOutputStream());
 
+			sendDungeon(serverModel.getDungeonArray());
+			
 			int count = is.available();
 
 			byte[] name = new byte[count];
@@ -95,7 +97,7 @@ class clientThread extends Thread
 				clientName = PlayName;
 				playerID = serverModel.addPlayer(PlayName);
 				os.writeInt(playerID);
-				sendDungeon(serverModel.getDungeonArray());
+				
 				sendPlayer();
 				sendNewPlayer();
 				sendActors();
