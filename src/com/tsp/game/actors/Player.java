@@ -1,8 +1,9 @@
 package com.tsp.game.actors;
 
+import java.awt.Point;
+
 import com.googlecode.blacken.core.Random;
 import com.tsp.game.map.Point3D;
-import org.json.simple.JSONObject;
 
 /**
  * Created with IntelliJ IDEA.
@@ -38,5 +39,12 @@ public class Player extends Actor
 		color = (int)(Math.random()*254) + 1;
 	}
 
-
+	@Override
+	public void startAttacking(Point delta) {
+		super.startAttacking(delta);
+		if (delta.equals(Point3D.UP) || delta.equals(Point3D.DOWN))
+            attackAnimation = "|";
+		else
+            attackAnimation = "-";
+	}
 }

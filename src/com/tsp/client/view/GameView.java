@@ -31,7 +31,6 @@ public class GameView implements Listenable
 	GameModel model;
 	boolean quit = false;
 	ArrayList<GameListener> listeners;
-	private int id;
 	boolean attacked = false;
 	private TCPClient tcpClient;
 	private Point attackDelta;
@@ -131,14 +130,14 @@ public class GameView implements Listenable
 		this.curses.clear();
 		this.curses.setCursorLocation(-1, -1);
 
-		int zLevel = this.model.getCurrentLevel();
+		int zLevel = this.model.getMe().getZ();
 
 		//Use the model to draw on the screen
-		for (int i = 0; i < this.model.dungeonRows(); i++)
+		for (int i = 0; i < this.model.getDungeon().getRows(); i++)
 		{
-			for (int j = 0; j < this.model.dungeonCols(); j++)
+			for (int j = 0; j < this.model.getDungeon().getColumns(); j++)
 			{
-				this.term.set(i, j, this.model.get(i, j, zLevel), model.getColor(j, i, zLevel), 0);
+				this.term.set(i, j, this.model.getSymbol(i, j, zLevel), model.getColor(j, i, zLevel), 0);
 			}
 		}
 		this.curses.refresh();
@@ -151,7 +150,7 @@ public class GameView implements Listenable
 		{
 			case BlackenKeys.NO_KEY:
 			{
-				if (attacked && model.resetAttack())
+				if (attacked && model.getMe().isAttacking())
 				{
 					attackDelta = null;
 					attacked = false;
@@ -209,7 +208,7 @@ public class GameView implements Listenable
 			movement.put("ID", player.getId());
 			movement.put("X", player.getX());
 			movement.put("Y", player.getY());
-			movement.put("Z", model.getCurrentLevel());
+			movement.put("Z", player.getZ());
 			fireEvent(EventType.TURN_MOVE, movement);
 		}
 		if(attacked)

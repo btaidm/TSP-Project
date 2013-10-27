@@ -1,10 +1,11 @@
 package com.tsp.game.actors;
 
-import com.googlecode.blacken.core.Random;
-import com.tsp.game.map.Point3D;
-import com.tsp.packets.Packet;
+import java.awt.Point;
+
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
+
+import com.tsp.game.map.Point3D;
 
 /**
  * Created with IntelliJ IDEA.
@@ -77,13 +78,15 @@ public class Actor implements JSONAware
 		ACTOR_AI
 	}
 	Point3D pos;
-	String name;
+	String name = "RandomActor";
 	int id;
 	int health;
 	int color = 255;
 	ActorType type;
 	String symbol;
-
+	boolean attacking;
+	String attackAnimation;
+	
 	protected static int count = 0;
 
 	public Actor()
@@ -160,6 +163,10 @@ public class Actor implements JSONAware
 		return id;
 	}
 
+	public void setId(int id) {
+		this.id = id;
+	}
+	
 	public void hit(Actor attacking)
 	{
 		this.health -= attacking.getDamage();
@@ -171,6 +178,14 @@ public class Actor implements JSONAware
 		pos = new Point3D(r.nextInt(COLS), r.nextInt(ROWS), r.nextInt(LVLS));
 	}
 
+	public boolean isAttacking() {
+		return this.attacking;
+	}
+	
+	public void startAttacking(Point point) {
+		this.attacking = true;
+	}
+	
 	@Override
 	public String toJSONString()
 	{
