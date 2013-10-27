@@ -145,7 +145,7 @@ public class GameModel
 
 	public boolean attemptAttack(Point delta)
 	{
-		Point3D newPosition = (Point3D) me.getPos().clone();
+		Point3D newPosition = () me.getPos().clone();
 		newPosition.translate(delta.x, delta.y);
 
 		int x = newPosition.x;
