@@ -1,11 +1,7 @@
 package com.tsp.game.actors;
 
 import com.googlecode.blacken.core.Random;
-import com.sun.scenario.effect.light.PointLight;
 import com.tsp.game.map.Point3D;
-import org.json.simple.JSONObject;
-
-import java.awt.*;
 
 /**
  * Created with IntelliJ IDEA.
