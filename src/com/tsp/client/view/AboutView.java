@@ -38,7 +38,7 @@ public class AboutView extends JFrame {
 		aboutText.setFocusable(false);
 		aboutText.setPreferredSize(new Dimension(325,200));
 		aboutText.setText("This game was developed in the Fall of 2013 at Michigan Technological University.\n\n" +
-				"Thank you for playing.");
+				"Thanks for playing!");
 		add(aboutText);
 	}
 }

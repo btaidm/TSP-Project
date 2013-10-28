@@ -13,7 +13,7 @@ import javax.swing.JPanel;
 import com.tsp.client.controller.StartupController;
 
 public class StartupView extends JFrame {
-
+	
 	public StartupView(StartupController controller) {
 		setTitle("Welcome!");
 		setSize(350,250);
@@ -31,19 +31,22 @@ public class StartupView extends JFrame {
 		add(subtitle);
 
 		JLabel blankLabel = new JLabel("");
-		blankLabel.setPreferredSize(new Dimension(275,30));
+		blankLabel.setPreferredSize(new Dimension(275,20));
 		add(blankLabel);
-
-		JButton startButton = new JButton("New Game");
-		startButton.addActionListener(controller);
-		startButton.setPreferredSize(new Dimension(275,50));
-		add(startButton);
-
+		
 		JPanel buttons = new JPanel();
+		JButton hostButton = new JButton("Host Game");
+		hostButton.setPreferredSize(new Dimension(250,30));
+		JButton joinButton = new JButton("Join Game");
+		joinButton.setPreferredSize(new Dimension(250,30));
 		JButton aboutButton = new JButton("About");
 		JButton helpButton = new JButton("Help");
 		helpButton.addActionListener(controller);
 		aboutButton.addActionListener(controller);
+		joinButton.addActionListener(controller);
+		hostButton.addActionListener(controller);
+		add(hostButton);
+		add(joinButton);
 		buttons.add(helpButton);
 		buttons.add(aboutButton);
 		add(buttons);

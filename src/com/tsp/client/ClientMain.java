@@ -22,6 +22,12 @@ public class ClientMain
 
 		GameModel gm = new GameModel();
 		TCPClient tcpClient = null;
+		
+		
+		while (!sc.hasGameStarted()) {
+			System.out.println("Startup running");
+		}
+		
 		try
 		{
 			tcpClient = new TCPClient(gm);

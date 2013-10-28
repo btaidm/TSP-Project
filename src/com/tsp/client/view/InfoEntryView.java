@@ -21,7 +21,7 @@ public class InfoEntryView extends JFrame {
 		setLayout(new FlowLayout(FlowLayout.CENTER));
 	
 		JLabel nameLabel = new JLabel("Player Name:");
-		JLabel serverLabel = new JLabel("Server Info:");
+		JLabel serverLabel = new JLabel("Server IP:");
 		playerEntry = new JTextField(20);
 		serverEntry = new JTextField(20);
 		nameLabel.setPreferredSize(new Dimension(275,35));

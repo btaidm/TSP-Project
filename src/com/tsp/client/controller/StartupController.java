@@ -13,15 +13,19 @@ import com.tsp.client.view.StartupView;
 
 public class StartupController implements ActionListener, MouseListener {
 
-	private StartupView startScreen;
 	private InfoEntryView infoEntryScreen;
 	private HelpView helpScreen;
 	private AboutView aboutScreen;
+	private boolean gameStart;
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
-		// Launch player/server info entry screen
-		if (arg0.getActionCommand().equals("New Game")) {
+		// Create new server and join game
+		if (arg0.getActionCommand().equals("Host Game")) {
+			System.out.println("Hosting game!");
+		}
+		// Join game on existing server
+		else if (arg0.getActionCommand().equals("Join Game")) {
 			infoEntryScreen = new InfoEntryView(this);
 			infoEntryScreen.setVisible(true);
 		}
@@ -29,7 +33,8 @@ public class StartupController implements ActionListener, MouseListener {
 		else if (arg0.getActionCommand().equals("Begin!")) {
 			System.out.println("Player: " + infoEntryScreen.getPlayer());			
 			System.out.println("Server: " + infoEntryScreen.getServer());	
-			infoEntryScreen.setVisible(false);
+			gameStart = true;
+			infoEntryScreen.dispose();
 		}
 		// Launch About window
 		else if (arg0.getActionCommand().equals("About")) {	
@@ -42,7 +47,11 @@ public class StartupController implements ActionListener, MouseListener {
 			helpScreen.setVisible(true);
 		}
 	}
-
+	
+	public boolean hasGameStarted() {
+		return gameStart;
+	}
+	
 	@Override
 	public void mouseClicked(MouseEvent e) {}
 
