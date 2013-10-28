@@ -1,6 +1,7 @@
 package com.tsp.packets;
 
 import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
 import com.tsp.game.map.Point3D;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
@@ -58,6 +59,12 @@ public abstract class Packet implements JSONAware
 		return packetID;
 	}
 
+	/**
+	 *
+	 * @param obj
+	 * @return
+	 * @throws IllegalArgumentException
+	 */
 	public static Packet parseJSONObject(JSONObject obj) throws IllegalArgumentException
 	{
 		if (obj.containsKey("packetType") && obj.containsKey("packetID"))
@@ -110,7 +117,10 @@ public abstract class Packet implements JSONAware
 					int color = ((Long) ((JSONObject) obj.get("actor")).get("color")).intValue();
 
 					Actor actor = new Actor(id, health, new Point3D(x, y, z), name, actorType, symbol, color);
-
+					if(actor.getType()== Actor.ActorType.ACTOR_PLAYER)
+					{
+						return new ActorPacket(((Long) obj.get("packetID")).intValue(), new Player(actor));
+					}
 					return new ActorPacket(((Long) obj.get("packetID")).intValue(), actor);
 				}
 				case QUIT_PACKET:

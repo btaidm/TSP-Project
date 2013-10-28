@@ -21,6 +21,7 @@ public class ClientMain
 		sv.setVisible(true);
 
 		GameModel gm = new GameModel();
+		
 		TCPClient tcpClient = null;
 		
 		

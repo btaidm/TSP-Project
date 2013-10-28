@@ -19,5 +19,12 @@ public abstract class AI extends Actor
 		super();
 		type = ActorType.ACTOR_AI;
 	}
+
+	/**
+	 * Calculates the AIs turn
+	 * @param dungeon the dungeon
+	 * @param actors the actors
+	 * @return a packet
+	 */
 	public abstract Packet turn(Dungeon dungeon, ArrayList<Actor> actors);
 }
