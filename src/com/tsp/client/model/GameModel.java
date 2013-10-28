@@ -28,43 +28,55 @@ public class GameModel
 
 	private Player me;
 	private Dungeon dungeon;
-	
+
 	public GameModel()
 	{
 		otherActors = new HashMap<Integer, Actor>();
 	}
 
 	/* Convinience methods for getting dungeon and actor */
-	public Dungeon getDungeon() {
+	public Dungeon getDungeon()
+	{
 		return this.dungeon;
 	}
-	
+
 	public Player getMe()
 	{
-		if (me == null) {
-			me = new Player("RandomPlayer", getDungeon().getRows(), getDungeon().getColumns(), getDungeon().getFloors());
+		if (me == null)
+		{
+			me = new Player("RandomPlayer",
+			                getDungeon().getRows(),
+			                getDungeon().getColumns(),
+			                getDungeon().getFloors());
 		}
 		return me;
 	}
-	
+
 	/* Methods used to get symbols and colors for drawing in the map */
 	public String getSymbol(int y, int x, int z)
 	{
-		if (me.getPos().equals(new Point3D(x, y, z)))
+		Point3D point = new Point3D(x, y, z);
+		if (me.getPos().equals(point))
 		{
 			return me.getSymbol();
 		}
-		else if (attackLocation != null && x == attackLocation.getX() && y == attackLocation.getY() &&
-		         z == attackLocation.getZ())
+		else if (me.isAttacking() && me.getAttackPos().equals(point))
 		{
-			return attackAnimation;
+			return me.getAttackSymbol();
 		}
 
 		for (Actor a : otherActors.values())
 		{
-			if (a.getPos().equals(new Point3D(x, y, z)))
+			if (a.getPos().equals(point))
 			{
 				return a.getSymbol();
+			}
+			if (a instanceof Player)
+			{
+				if (((Player) a).isAttacking() && ((Player) a).getAttackPos().equals(point))
+				{
+					return ((Player) a).getAttackSymbol();
+				}
 			}
 		}
 
@@ -94,11 +106,11 @@ public class GameModel
 			return (int) (255.0 / 2);
 		return 255;
 	}
-	
+
 	/* Convinience setters and getters, also game state information*/
 	public void setID(int id)
 	{
-		this.getMe().setId(id);
+		this.getMe().setID(id);
 	}
 
 	public void setDungeon(String[][][] dungeon)
@@ -130,7 +142,7 @@ public class GameModel
 	{
 		this.ready = ready;
 	}
-	
+
 	/* Client-Server Communication functions */
 	public boolean packetsAviable()
 	{
@@ -170,25 +182,42 @@ public class GameModel
 
 	public void update(ActorUpdate actorUpdate)
 	{
-		if (otherActors.containsKey(actorUpdate.getActorID()))
+		if (otherActors.containsKey(actorUpdate.getActorID()) || getMe().getId() == actorUpdate.getActorID())
 		{
 			if (actorUpdate.contains("remove"))
 			{
-				otherActors.remove(actorUpdate.getActorID());
+				if (getMe().getId() == actorUpdate.getActorID())
+					setQuit(true);
+				else
+					otherActors.remove(actorUpdate.getActorID());
 			}
 			else
 			{
-				if (actorUpdate.contains("X"))
-					otherActors.get(actorUpdate.getActorID()).setX(((Long) actorUpdate.getValue("X")).intValue());
-				if (actorUpdate.contains("Y"))
-					otherActors.get(actorUpdate.getActorID()).setY(((Long) actorUpdate.getValue("Y")).intValue());
-				if (actorUpdate.contains("Z"))
-					otherActors.get(actorUpdate.getActorID()).setZ(((Long) actorUpdate.getValue("Z")).intValue());
+				Actor actor = (getMe().getId() == actorUpdate.getActorID() ? getMe() :
+						otherActors.get(actorUpdate.getActorID()));
+
+				if (getMe().getId() != actorUpdate.getActorID() && actorUpdate.contains("X"))
+					actor.setX(((Long) actorUpdate.getValue("X")).intValue());
+
+				if (getMe().getId() != actorUpdate.getActorID() && actorUpdate.contains("Y"))
+					actor.setY(((Long) actorUpdate.getValue("Y")).intValue());
+
+				if (getMe().getId() != actorUpdate.getActorID() && actorUpdate.contains("Z"))
+					actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
+
 				if (actorUpdate.contains("health"))
-					otherActors.get(actorUpdate.getActorID())
-							.setHealth(((Long) actorUpdate.getValue("health")).intValue());
+					actor.setHealth(((Long) actorUpdate.getValue("health")).intValue());
+
 				if (actorUpdate.contains("symbol"))
-					otherActors.get(actorUpdate.getActorID()).setSymbol((String) actorUpdate.getValue("symbol"));
+					actor.setSymbol((String) actorUpdate.getValue("symbol"));
+
+				if (getMe().getId() != actorUpdate.getActorID() && actorUpdate.contains("attacking") && actorUpdate.contains("deltaX") &&
+				    actorUpdate.contains("deltaY"))
+					((Player) actor)
+							.setAttacking((Boolean) actorUpdate.getValue("attacking"),
+							              new Point3D(((Long) actorUpdate.getValue("deltaX")).intValue(),
+							                          ((Long) actorUpdate.getValue("deltaY")).intValue(),
+							                          0));
 			}
 		}
 	}
@@ -208,66 +237,67 @@ public class GameModel
 		}
 		return false;
 	}
-	
+
 	/* Attempting attack and move methods */
 	public boolean attemptMove(Point delta)
-    {
-            Point3D newPosition = me.getPos().clone();
-            newPosition.translate((int) delta.getX(), (int) delta.getY());
+	{
+		Point3D newPosition = me.getPos().clone();
+		newPosition.translate((int) delta.getX(), (int) delta.getY());
 
-            if (getMe().isAttacking())
-            	return false;
+		if (getMe().isAttacking() && !getMe().attemptAttackReset())
+			return false;
 
-            // Verify the new Point3D is inside the map
-            if (getDungeon().validPoint(newPosition))
-            {
-                    int x = (int) newPosition.getX();
-                    int y = (int) newPosition.getY();
-                    int z = newPosition.getZ();
-                    if (!occupied(newPosition))
-                    {
-                            if (dungeon.isEmptyFloor(x, y, z))
-                            {
-                                    me.setPos(newPosition);
-                                    return true;
-                            }
-                            else if (dungeon.isStairUp(x, y, z))
-                            {
-                                    me.setPos(newPosition);
-                                    me.move(new Point3D(0, 0, 1));
-                                    return true;
-                            }
-                            else if (dungeon.isStairDown(x, y, z))
-                            {
-                                    me.setPos(newPosition);
-                                    me.move(new Point3D(0, 0, -1));
-                                    return true;
-                            }
-                            else
-                            {
-                            	return false;
-                            }
-                    }
-            }
-            return false;
-    }
-	
-	public boolean attemptAttack(Point delta)
-    {
-            Point3D newPosition = (Point3D) me.getPos().clone();
-            newPosition.translate(delta.x, delta.y);
+		// Verify the new Point3D is inside the map
+		if (getDungeon().validPoint(newPosition))
+		{
+			int x = (int) newPosition.getX();
+			int y = (int) newPosition.getY();
+			int z = newPosition.getZ();
+			if (!occupied(newPosition))
+			{
+				if (dungeon.isEmptyFloor(x, y, z))
+				{
+					me.setPos(newPosition);
+					return true;
+				}
+				else if (dungeon.isStairUp(x, y, z))
+				{
+					me.setPos(newPosition);
+					me.move(new Point3D(0, 0, 1));
+					return true;
+				}
+				else if (dungeon.isStairDown(x, y, z))
+				{
+					me.setPos(newPosition);
+					me.move(new Point3D(0, 0, -1));
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		return false;
+	}
 
-            int x = newPosition.x;
-            int y = newPosition.y;
-            int z = newPosition.getZ();
+	public boolean attemptAttack(Point3D delta)
+	{
+		Point3D newPosition = me.getPos().clone();
+		newPosition.translate(delta.x, delta.y);
 
-            if(getMe().isAttacking());
+		int x = newPosition.x;
+		int y = newPosition.y;
+		int z = newPosition.getZ();
 
-            if (getDungeon().validPoint(newPosition) && dungeon.isEmptyFloor(new Point3D(x, y, z)))
-            {
-                    me.startAttacking(delta);
-            }
+		if (getMe().isAttacking() && getMe().attemptAttackReset()) return false;
 
-            return false;
-    }
+		if (getDungeon().validPoint(newPosition) && dungeon.isEmptyFloor(new Point3D(x, y, z)))
+		{
+			me.setAttacking(true, delta);
+			return true;
+		}
+
+		return false;
+	}
 }

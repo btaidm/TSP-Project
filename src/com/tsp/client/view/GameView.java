@@ -22,9 +22,12 @@ import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.Packet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameView implements Listenable
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameView.class);
 
 	SwingTerminal term;
 	CursesLikeAPI curses;
@@ -47,7 +50,7 @@ public class GameView implements Listenable
 
 
 			this.term.init("TSP Rouglike", 25, 80);
-			term.resize(25,80);
+			term.resize(25, 80);
 
 			this.curses = new CursesLikeAPI(this.term);
 			this.curses.resize(24, 80);
@@ -83,6 +86,7 @@ public class GameView implements Listenable
 		int ch = BlackenKeys.NO_KEY;
 		while (!quit && !model.getQuit())
 		{
+			LOGGER.info("{}", model.getMe().toString());
 			processPackets();
 			ch = this.curses.getch(50);
 			process(ch);
@@ -96,17 +100,17 @@ public class GameView implements Listenable
 
 	private void processPackets()
 	{
-		while(model.hasPackets())
+		while (model.hasPackets())
 		{
 			Packet packet = model.getPacket();
 			switch (packet.getPacketType())
 			{
 				case ACTOR_PACKET:
-					ActorPacket actorPacket = (ActorPacket)packet;
+					ActorPacket actorPacket = (ActorPacket) packet;
 					model.addActor(actorPacket.getActor());
 					break;
 				case UPDATE_PACKET:
-					ActorUpdate actorUpdate = (ActorUpdate)packet;
+					ActorUpdate actorUpdate = (ActorUpdate) packet;
 					model.update(actorUpdate);
 					break;
 				default:
@@ -148,12 +152,25 @@ public class GameView implements Listenable
 		boolean moved = false;
 		switch (ch)
 		{
+			default:
 			case BlackenKeys.NO_KEY:
 			{
 				if (attacked && model.getMe().isAttacking())
 				{
-					attackDelta = null;
-					attacked = false;
+					if (model.getMe().attemptAttackReset())
+					{
+						attackDelta = null;
+						attacked = false;
+
+						Actor player = model.getMe();
+						HashMap<String, Object> attack = new HashMap<String, Object>();
+						attack.put("ID", player.getId());
+						attack.put("attacking", false);
+						attack.put("deltaX", 0);
+						attack.put("deltaY", 0);
+
+						fireEvent(EventType.TURN_UPDATE, attack);
+					}
 				}
 				break;
 			}
@@ -177,31 +194,31 @@ public class GameView implements Listenable
 				moved = this.model.attemptMove(Point3D.RIGHT);
 				break;
 			case 'a':
-				if(attacked = this.model.attemptAttack(Point3D.LEFT))
+				if (attacked = this.model.attemptAttack(Point3D.LEFT))
 				{
 					attackDelta = Point3D.LEFT;
 				}
 				break;
 			case 'd':
-				if(attacked = this.model.attemptAttack(Point3D.RIGHT))
+				if (attacked = this.model.attemptAttack(Point3D.RIGHT))
 				{
 					attackDelta = Point3D.RIGHT;
 				}
 				break;
 			case 's':
-				if(attacked = this.model.attemptAttack(Point3D.DOWN))
+				if (attacked = this.model.attemptAttack(Point3D.DOWN))
 				{
 					attackDelta = Point3D.DOWN;
 				}
 				break;
 			case 'w':
-				if(attacked = this.model.attemptAttack(Point3D.UP))
+				if (attacked = this.model.attemptAttack(Point3D.UP))
 				{
 					attackDelta = Point3D.UP;
 				}
 				break;
 		}
-		if(moved)
+		if (moved)
 		{
 			Actor player = model.getMe();
 			HashMap<String, Object> movement = new HashMap<String, Object>();
@@ -211,13 +228,13 @@ public class GameView implements Listenable
 			movement.put("Z", player.getZ());
 			fireEvent(EventType.TURN_MOVE, movement);
 		}
-		if(attacked)
+		if (attacked)
 		{
 			Actor player = model.getMe();
 			HashMap<String, Object> attack = new HashMap<String, Object>();
 			attack.put("ID", player.getId());
-			attack.put("X", (int)attackDelta.getX());
-			attack.put("Y", (int)attackDelta.getY());
+			attack.put("X", (int) attackDelta.getX());
+			attack.put("Y", (int) attackDelta.getY());
 			fireEvent(EventType.TURN_ATTACK, attack);
 		}
 	}

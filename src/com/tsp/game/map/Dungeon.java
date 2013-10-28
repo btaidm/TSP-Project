@@ -23,12 +23,29 @@ public class Dungeon
 	private String[][][] dungeon;
 	private MapGenerator mapGenerator;
 
+	/**
+	 *
+	 */
 	public Dungeon()
 	{
 		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		generateDungeon();
 	}
 
+	/**
+	 *
+	 */
+	private void generateDungeon()
+	{
+		dungeon = mapGenerator.getMap(floors, rows, cols);
+	}
+
+	/**
+	 *
+	 * @param cols
+	 * @param rows
+	 * @param floors
+	 */
 	public Dungeon(int cols, int rows, int floors)
 	{
 		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
@@ -38,12 +55,23 @@ public class Dungeon
 		generateDungeon();
 	}
 
+	/**
+	 *
+	 * @param mapGenerator
+	 */
 	public Dungeon(MapGenerator mapGenerator)
 	{
 		this.mapGenerator = mapGenerator;
 		generateDungeon();
 	}
 
+	/**
+	 *
+	 * @param cols
+	 * @param rows
+	 * @param floors
+	 * @param mapGenerator
+	 */
 	public Dungeon(int cols, int rows, int floors, MapGenerator mapGenerator)
 	{
 
@@ -54,6 +82,10 @@ public class Dungeon
 		generateDungeon();
 	}
 
+	/**
+	 *
+	 * @param dungeon
+	 */
 	public Dungeon(String[][][] dungeon)
 	{
 		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
@@ -63,22 +95,45 @@ public class Dungeon
 		this.rows = dungeon[0][0].length;
 	}
 
-	private void generateDungeon()
-	{
-		dungeon = mapGenerator.getMap(floors, rows, cols);
-	}
-
+	/**
+	 *
+	 * @return
+	 */
 	public String[][][] getDungeon()
 	{
 		return dungeon;
 	}
 
-	public boolean walkableTile(Point3D point)
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	public String getTile(int x, int y, int z)
 	{
-		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR) || getTile(point).equals(STAIR_DOWN) ||
-		                             getTile(point).equals(STAIR_UP));
+		return dungeon[z][x][y];
 	}
 
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	public boolean validPoint(int x, int y, int z)
+	{
+		Point3D point = new Point3D(x, y, z);
+		return validPoint(point);
+	}
+
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
 	public boolean validPoint(Point3D point)
 	{
 		int x = (int) point.getX();
@@ -88,83 +143,137 @@ public class Dungeon
 		return (x >= 0 && x < cols) && (y >= 0 && y < rows) && (z >= 0 && z < floors);
 	}
 
-	public boolean isStairUp(Point3D point)
-	{
-		return validPoint(point) && (getTile(point).equals(STAIR_UP));
-	}
-
-	public boolean isStairDown(Point3D point)
-	{
-		return validPoint(point) && (getTile(point).equals(STAIR_DOWN));
-	}
-
-	public boolean isEmptyFloor(Point3D point)
-	{
-		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR));
-	}
-
-	public boolean isWall(Point3D point)
-	{
-		return validPoint(point) && getTile(point).equals(WALL);
-	}
-
-	public String getTile(Point3D point)
-	{
-		return dungeon[point.getZ()][((int) point.getX())][((int) point.getY())];
-	}
-
-	public String getTile(int x, int y, int z)
-	{
-		return dungeon[z][x][y];
-	}
-
-	public boolean validPoint(int x, int y, int z)
-	{
-		Point3D point = new Point3D(x, y, z);
-		return validPoint(point);
-	}
-
-	public boolean walkableTile(int x, int y, int z)
-	{
-		Point3D point = new Point3D(x, y, z);
-		return walkableTile(point);
-	}
-
+	/**
+	 *
+	 * @return
+	 */
 	public int getColumns()
 	{
 		return cols;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public int getFloors()
 	{
 		return floors;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public int getRows()
 	{
 		return rows;
 	}
 
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
 	public boolean isEmptyFloor(int x, int y, int z)
 	{
 		return isEmptyFloor(new Point3D(x, y, z));
 	}
 
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
+	public boolean isEmptyFloor(Point3D point)
+	{
+		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR));
+	}
+
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
+	public String getTile(Point3D point)
+	{
+		return dungeon[point.getZ()][((int) point.getX())][((int) point.getY())];
+	}
+
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
 	public boolean isStairUp(int x, int y, int z)
 	{
 		return isStairUp(new Point3D(x, y, z));
 	}
 
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
+	public boolean isStairUp(Point3D point)
+	{
+		return validPoint(point) && (getTile(point).equals(STAIR_UP));
+	}
+
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
 	public boolean isWall(int x, int y, int z)
 	{
 		return isWall(new Point3D(x, y, z));
 	}
 
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
+	public boolean isWall(Point3D point)
+	{
+		return validPoint(point) && getTile(point).equals(WALL);
+	}
+
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
 	public boolean isStairDown(int x, int y, int z)
 	{
 		return isStairDown(new Point3D(x, y, z));
 	}
 
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
+	public boolean isStairDown(Point3D point)
+	{
+		return validPoint(point) && (getTile(point).equals(STAIR_DOWN));
+	}
+
+	/**
+	 *
+	 * @param actors
+	 * @return
+	 * @throws Exception
+	 */
 	public Point3D findFirstWalkablePoint(Collection<Actor> actors) throws Exception
 	{
 		for (int z = 0; z < this.floors; z++)
@@ -183,6 +292,14 @@ public class Dungeon
 		throw new Exception("No point available");
 	}
 
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @param actors
+	 * @return
+	 */
 	private boolean occupied(int x, int y, int z, Collection<Actor> actors)
 	{
 		for (Actor actor : actors)
@@ -191,5 +308,29 @@ public class Dungeon
 				return true;
 		}
 		return false;
+	}
+
+	/**
+	 *
+	 * @param x
+	 * @param y
+	 * @param z
+	 * @return
+	 */
+	public boolean walkableTile(int x, int y, int z)
+	{
+		Point3D point = new Point3D(x, y, z);
+		return walkableTile(point);
+	}
+
+	/**
+	 *
+	 * @param point
+	 * @return
+	 */
+	public boolean walkableTile(Point3D point)
+	{
+		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR) || getTile(point).equals(STAIR_DOWN) ||
+		                             getTile(point).equals(STAIR_UP));
 	}
 }
