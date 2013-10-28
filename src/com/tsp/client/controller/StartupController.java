@@ -13,23 +13,31 @@ import com.tsp.client.view.StartupView;
 
 public class StartupController implements ActionListener, MouseListener {
 
-	private StartupView startScreen;
 	private InfoEntryView infoEntryScreen;
 	private HelpView helpScreen;
 	private AboutView aboutScreen;
+	private String server;
+	private String playerName;
+	private boolean gameStart;
+	private boolean host;
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
-		// Launch player/server info entry screen
-		if (arg0.getActionCommand().equals("New Game")) {
+		// Create new server and join game
+		if (arg0.getActionCommand().equals("Host Game")) {
+			host = true;
+		}
+		// Join game on existing server
+		else if (arg0.getActionCommand().equals("Join Game")) {
 			infoEntryScreen = new InfoEntryView(this);
 			infoEntryScreen.setVisible(true);
 		}
 		// Launch actual game in terminal window (TODO)
-		else if (arg0.getActionCommand().equals("Begin!")) {
-			System.out.println("Player: " + infoEntryScreen.getPlayer());			
-			System.out.println("Server: " + infoEntryScreen.getServer());	
-			infoEntryScreen.setVisible(false);
+		else if (arg0.getActionCommand().equals("Begin!")) {		
+			server = infoEntryScreen.getServer();
+			playerName = infoEntryScreen.getPlayer();
+			gameStart = true;
+			infoEntryScreen.dispose();
 		}
 		// Launch About window
 		else if (arg0.getActionCommand().equals("About")) {	
@@ -42,7 +50,23 @@ public class StartupController implements ActionListener, MouseListener {
 			helpScreen.setVisible(true);
 		}
 	}
-
+	
+	public boolean hasGameStarted() {
+		return gameStart;
+	}
+	
+	public String getServer() {
+		return server;
+	}
+	
+	public String getPlayer() {
+		return playerName;
+	}
+	
+	public boolean isHost() {
+		return host;
+	}
+	
 	@Override
 	public void mouseClicked(MouseEvent e) {}
 
