@@ -135,9 +135,7 @@ public class ServerModel implements Runnable
 
 	public Player getPlayer(Integer playerID)
 	{
-		LOGGER.info("{}: {}: Model: get player id: {}",
-		            Thread.currentThread().getName(),
-		            Thread.currentThread().getId(),
+		LOGGER.info("get player id: {}",
 		            playerID);
 		return players.get(playerID);
 	}
@@ -228,12 +226,72 @@ public class ServerModel implements Runnable
 	{
 		LOGGER.info("Processing attack from playerID: {}", attackPacket.getAttacker());
 		ArrayList<Actor> actors = getActors();
+		Player attacker = getPlayer(attackPacket.getAttacker());
+		attacker.setAttacking(true, new Point3D(attackPacket.getDeltaX(), attackPacket.getDeltaY(), 0));
+		ActorUpdate attackUpdate = new ActorUpdate(attacker.getId());
 
+		attackUpdate.insertValue("attacking", true);
+		attackUpdate.insertValue("deltaX", (int) attacker.getDelta().getX());
+		attackUpdate.insertValue("deltaY", (int) attacker.getDelta().getY());
+		outgoingPackets.add(attackUpdate);
+
+		Point3D attackDest = attacker.getAttackPos();
+		for (Actor a : actors)
+		{
+			if (a.getId() != attackPacket.getAttacker())
+			{
+				if (a.checkHit(attackDest))
+				{
+					attacker.hit(a);
+					ActorUpdate aUpdate = new ActorUpdate(a.getId());
+					if (a.getHealth() <= 0)
+						aUpdate.insertValue("remove", "remove");
+					else
+						aUpdate.insertValue("health", a.getHealth());
+					outgoingPackets.add(aUpdate);
+				}
+			}
+		}
 	}
 
 	private void processUpdate(ActorUpdate actorUpdate)
 	{
 		LOGGER.info("Processing update for playerID: {}", actorUpdate.getActorID());
+		if (players.containsKey(actorUpdate.getActorID()))
+		{
+			if (actorUpdate.contains("remove"))
+			{
+				players.remove(actorUpdate.getActorID());
+			}
+			else
+			{
+				Actor actor = players.get(actorUpdate.getActorID());
+
+				if (actorUpdate.contains("X"))
+					actor.setX(((Long) actorUpdate.getValue("X")).intValue());
+
+				if (actorUpdate.contains("Y"))
+					actor.setY(((Long) actorUpdate.getValue("Y")).intValue());
+
+				if (actorUpdate.contains("Z"))
+					actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
+
+				if (actorUpdate.contains("health"))
+					actor.setHealth(((Long) actorUpdate.getValue("health")).intValue());
+
+				if (actorUpdate.contains("symbol"))
+					actor.setSymbol((String) actorUpdate.getValue("symbol"));
+
+				if (actorUpdate.contains("attacking") && actorUpdate.contains("deltaX") &&
+				    actorUpdate.contains("deltaY"))
+					((Player) actor)
+							.setAttacking((Boolean) actorUpdate.getValue("attacking"),
+							              new Point3D(((Long) actorUpdate.getValue("deltaX")).intValue(),
+							                          ((Long) actorUpdate.getValue("deltaY")).intValue(),
+							                          0));
+			}
+			this.outgoingPackets.add(actorUpdate);
+		}
 	}
 
 	private void processActor(ActorPacket actorPacket)
@@ -272,7 +330,7 @@ public class ServerModel implements Runnable
 		System.out.println("Removing " + players.get(playerID));
 		players.remove(playerID);
 		ActorUpdate actorUpdate = new ActorUpdate(playerID);
-		actorUpdate.insertValue("remove","remove");
+		actorUpdate.insertValue("remove", "remove");
 
 		outgoingPackets.add(actorUpdate);
 	}
