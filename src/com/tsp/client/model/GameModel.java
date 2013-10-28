@@ -28,10 +28,16 @@ public class GameModel
 
 	private Player me;
 	private Dungeon dungeon;
+	private String playerName;
 
 	public GameModel()
 	{
 		otherActors = new HashMap<Integer, Actor>();
+	}
+	
+	public GameModel(String playerName) {
+		this();
+		this.playerName = playerName;
 	}
 
 	/* Convinience methods for getting dungeon and actor */

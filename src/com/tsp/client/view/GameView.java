@@ -56,7 +56,6 @@ public class GameView implements Listenable
 		{
 			this.term = new SwingTerminal();
 
-
 			this.term.init("TSP Rouglike", SCREEN_HEIGHT, 80, TerminalScreenSize.SIZE_MEDIUM);
 			term.resize(SCREEN_HEIGHT, 80);
 
