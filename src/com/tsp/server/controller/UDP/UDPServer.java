@@ -30,7 +30,7 @@ public class UDPServer extends Thread
 		DatagramSocket serverSocket = null;
 		try
 		{
-			serverSocket = new DatagramSocket(12000, InetAddress.getLoopbackAddress());
+			serverSocket = new DatagramSocket(12000);
 			while(true)
 			{
 				byte[] receiveData = new byte[1024];
