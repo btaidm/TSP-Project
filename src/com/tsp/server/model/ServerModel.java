@@ -55,10 +55,7 @@ public class ServerModel implements Runnable
 
 	public int addPlayer(String playName)
 	{
-		LOGGER.info("{}: {}: Model: Adding player: {}",
-		            Thread.currentThread().getName(),
-		            Thread.currentThread().getId(),
-		            playName);
+		System.out.println("Adding Player: " + playName);
 		Player player = new Player(playName, COLS, ROWS, FLOORS);
 		Point3D point3D = player.getPos();
 		boolean spotFound = false;
@@ -260,7 +257,7 @@ public class ServerModel implements Runnable
 		{
 			if (actorUpdate.contains("remove"))
 			{
-				players.remove(actorUpdate.getActorID());
+				removePlayer(actorUpdate.getActorID());
 			}
 			else
 			{

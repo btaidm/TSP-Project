@@ -86,7 +86,10 @@ class clientThread extends Thread
 			sendDungeon(serverModel.getDungeonArray());
 			
 			int count = is.available();
-
+			while(count <= 0)
+			{
+				count = is.available();
+			}
 			byte[] name = new byte[count];
 
 			is.read(name);
