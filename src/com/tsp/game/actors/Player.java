@@ -1,8 +1,11 @@
 package com.tsp.game.actors;
 
 import com.googlecode.blacken.core.Random;
+import com.sun.scenario.effect.light.PointLight;
 import com.tsp.game.map.Point3D;
 import org.json.simple.JSONObject;
+
+import java.awt.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,20 +17,11 @@ import org.json.simple.JSONObject;
 public final class Player extends Actor
 {
 	static int playerCount = 0;
-
+	final int ATTACK_COUNTER_MAX = 3;
 	String attackSymbol = "-";
-
 	boolean attacking = false;
 	Point3D attackDelta = new Point3D(0,0,0);
 	int attackCounter = 0;
-	final int ATTACK_COUNTER_MAX = 3;
-
-	private Player()
-	{
-		type = ActorType.ACTOR_PLAYER;
-		symbol = "@";
-
-	}
 
 	/**
 	 * Creates a new player with name of Player count
@@ -43,6 +37,13 @@ public final class Player extends Actor
 		playerCount++;
 		name = "Player " + playerCount;
 		color = (int)(Math.random()*254) + 1;
+	}
+
+	private Player()
+	{
+		type = ActorType.ACTOR_PLAYER;
+		symbol = "@";
+
 	}
 
 	/**
@@ -84,7 +85,7 @@ public final class Player extends Actor
 		if((this.attacking = attacking))
 		{
 			attackCounter = ATTACK_COUNTER_MAX;
-			this.attackDelta = attackDelta;
+			this.attackDelta = (Point3D) attackDelta;
 			if(this.attackDelta.equals(Point3D.UP) || this.attackDelta.equals(Point3D.DOWN))
 			{
 				attackSymbol = "|";
@@ -112,4 +113,25 @@ public final class Player extends Actor
 		return attackSymbol;
 	}
 
+	public Point3D getAttackPos()
+	{
+		Point3D attackPos = this.pos.clone();
+		attackPos.add(attackDelta);
+		return attackPos;
+	}
+
+	public void setXAttack(int x)
+	{
+		this.attackDelta.x = x;
+	}
+
+	public void setYAttack(int y)
+	{
+		this.attackDelta.y = y;
+	}
+
+	public Point3D getDelta()
+	{
+		return attackDelta;
+	}
 }

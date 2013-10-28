@@ -1,10 +1,11 @@
 package com.tsp.game.actors;
 
-import com.googlecode.blacken.core.Random;
-import com.tsp.game.map.Point3D;
-import com.tsp.packets.Packet;
+import java.awt.Point;
+
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
+
+import com.tsp.game.map.Point3D;
 
 /**
  * The Actor Superclass that all {@link Player} and {@link AI} are based on
@@ -171,7 +172,7 @@ public class Actor implements JSONAware
 	 * @param check the point to check against
 	 * @return whether or not the actor was hit
 	 */
-	boolean checkHit(Point3D check)
+	public boolean checkHit(Point3D check)
 	{
 		return pos.equals(check);
 	}
@@ -261,12 +262,12 @@ public class Actor implements JSONAware
 	}
 
 	/**
-	 * Actor attacking damages this actor
-	 * @param attacking the attacking actor
+	 * Actor attackee damages this actor
+	 * @param attackee the attackee actor
 	 */
-	public void hit(Actor attacking)
+	public void hit(Actor attackee)
 	{
-		this.health -= attacking.getDamage();
+		attackee.setHealth(attackee.getHealth() - getDamage());
 	}
 
 	/**
@@ -325,6 +326,12 @@ public class Actor implements JSONAware
 		       ", symbol='" + symbol + '\'' +
 		       '}';
 	}
+
+	public void setID(int ID)
+	{
+		this.id = ID;
+	}
+
 
 	/**
 	 * These are the types an Actor can have

@@ -60,4 +60,14 @@ public class AttackPacket extends Packet
 	{
 		return attacker;
 	}
+
+	public int getDeltaX()
+	{
+		return deltaX;
+	}
+
+	public int getDeltaY()
+	{
+		return deltaY;
+	}
 }

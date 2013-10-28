@@ -6,10 +6,10 @@ public class Point3D extends Point
 {
 
 	//Points corresponding to directions
-	public static final Point LEFT = new Point(-1, 0);
-	public static final Point RIGHT = new Point(1, 0);
-	public static final Point UP = new Point(0, -1);
-	public static final Point DOWN = new Point(0, 1);
+	public static final Point3D LEFT = new Point3D(-1, 0);
+	public static final Point3D RIGHT = new Point3D(1, 0);
+	public static final Point3D UP = new Point3D(0, -1);
+	public static final Point3D DOWN = new Point3D(0, 1);
 	/**
 	 *
 	 */
@@ -21,6 +21,12 @@ public class Point3D extends Point
 	{
 		super(x, y);
 		this.z = z;
+	}
+
+	public Point3D(int x, int y)
+	{
+		super(x, y);
+		this.z = 0;
 	}
 
 	public int getZ()

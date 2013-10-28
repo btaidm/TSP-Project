@@ -2,6 +2,7 @@ package com.tsp.client.controller;
 
 import com.tsp.client.model.GameModel;
 import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.Packet;
 import com.tsp.packets.QuitPacket;
@@ -48,13 +49,9 @@ public class TCPClient extends Thread
 	{
 		try
 		{
-			//Connect to the server
 			connect();
-
-			//Send Client Name
-			sendName(model.getName());
-
-			//Receive Player ID
+			model.setDungeon(getDungeon());
+			sendName(model.getMe().getName());
 			int id = this.getID();
 			if (id == -1)
 			{
@@ -75,11 +72,6 @@ public class TCPClient extends Thread
 			{
 				//Continue with client
 				model.setID(id);
-
-				//Gets Dungeon and sets it to the model
-				model.setDungeon(getDungeon());
-
-				//Sets the player
 				model.setMe(getPlayer());
 
 				//Tells the model that every thing is ready
@@ -103,14 +95,14 @@ public class TCPClient extends Thread
 			model.setQuit(true);
 		}
 	}
-
+	
 	/**
 	 * Receives the player from the server
 	 *
 	 * @return the {@link Actor} that contains the player information
 	 * @throws IOException when the socket has an error
 	 */
-	private Actor getPlayer() throws IOException
+	private Player getPlayer() throws IOException
 	{
 		String json = is.readUTF();
 		Object object = JSONValue.parse(json);
@@ -120,18 +112,12 @@ public class TCPClient extends Thread
 			if (packet.getPacketType() == Packet.PacketType.ACTOR_PACKET)
 				if (((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
 				{
-					return ((ActorPacket) packet).getActor();
+					return (Player)(((ActorPacket) packet).getActor());
 				}
 		}
 		return null;
 	}
 
-	/**
-	 * Creates a TCPClient with address set to local host
-	 *
-	 * @param model the {@link GameModel} that contains the game data
-	 * @throws UnknownHostException
-	 */
 	public TCPClient(GameModel model) throws UnknownHostException
 	{
 		this.model = model;
