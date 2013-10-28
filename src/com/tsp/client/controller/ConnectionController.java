@@ -152,9 +152,9 @@ public class ConnectionController implements GameListener
 		{
 			ActorUpdate actorUpdate = new ActorUpdate((Integer) e.payload.get("ID"));
 			e.payload.remove("ID");
-			for(Map.Entry<String, Object> entry : e.payload.entrySet())
+			for (Map.Entry<String, Object> entry : e.payload.entrySet())
 			{
-				actorUpdate.insertValue(entry.getKey(),entry.getValue());
+				actorUpdate.insertValue(entry.getKey(), entry.getValue());
 			}
 			packets.add(actorUpdate);
 		}
@@ -199,7 +199,7 @@ public class ConnectionController implements GameListener
 				byte[] data = packet.toJSONString().getBytes();
 				DatagramPacket response = new DatagramPacket(data,
 				                                             data.length,
-				                                             InetAddress.getLoopbackAddress(),
+				                                             addr,
 				                                             12000);
 				try
 				{
