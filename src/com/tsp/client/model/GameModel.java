@@ -50,7 +50,7 @@ public class GameModel
 	{
 		if (me == null)
 		{
-			me = new Player("RandomPlayer",
+			me = new Player(playerName,
 			                getDungeon().getRows(),
 			                getDungeon().getColumns(),
 			                getDungeon().getFloors());
