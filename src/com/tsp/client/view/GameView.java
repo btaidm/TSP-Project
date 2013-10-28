@@ -141,13 +141,25 @@ public class GameView implements Listenable
 		this.curses.clear();
 		this.curses.setCursorLocation(-1, -1);
 
+		int zLevel = this.model.getMe().getZ();
+		
 		// Draw HUD
 		Player p = this.model.getMe();
-		drawString(p.getName(), OFFSET_LEFT, 0);
-		LOGGER.debug(p.getName());
+		drawString(p.getName(), OFFSET_LEFT, 0, p.getColor(), 0);
+		
+		String floorString = String.format("Floor %d", zLevel);
+		drawString(floorString, 80 + OFFSET_LEFT - floorString.length(), 0, p.getColor(), 0);
+		
+		StringBuilder healthBuilder = new StringBuilder();
+		for (int i = 0; i < p.getHealth(); i++) {
+			healthBuilder.append("\u2764");
+		}
+		drawString(healthBuilder.toString(), OFFSET_LEFT, OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2, p.getColor(), 0);
+		
+		String weapongString = "Currently Wielding " + p.getWeaponName();
+		drawString(weapongString, 80 + OFFSET_LEFT - weapongString.length(), OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2, p.getColor(), 0);
+		
 		// Draw Map
-		int zLevel = this.model.getMe().getZ();
-
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.getDungeon().getRows(); i++)
 		{
@@ -276,10 +288,10 @@ public class GameView implements Listenable
 	}
 	
 	// Convinience method for drawing strings in the terminal
-	public void drawString(String s, int x, int y) {
+	public void drawString(String s, int x, int y, int fg, int bg) {
 		for (int i = 0; i < s.length(); i++) {
 			String current = String.valueOf(s.charAt(i));
-			this.curses.set(y, x + i, current, 0, 255);
+			this.curses.set(y, x + i, current, fg, bg);
 		}
 	}
 }

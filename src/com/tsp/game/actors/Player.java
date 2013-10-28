@@ -130,4 +130,8 @@ public final class Player extends Actor
 	{
 		return attackDelta;
 	}
+	
+	public String getWeaponName() {
+		return "Sword";
+	}
 }
