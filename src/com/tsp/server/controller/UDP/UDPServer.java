@@ -21,6 +21,7 @@ public class UDPServer extends Thread
 
 	public UDPServer(ServerModel serverModel)
 	{
+		super("UDP Server");
 		this.model = serverModel;
 	}
 
@@ -37,6 +38,7 @@ public class UDPServer extends Thread
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				serverSocket.receive(receivePacket);
 				new Thread(new RespondWorker(serverSocket, receivePacket, model)).start();
+				Thread.sleep(50);
 			}
 		}
 		catch (SocketException e)
@@ -44,6 +46,10 @@ public class UDPServer extends Thread
 			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 		}
 		catch (IOException e)
+		{
+			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+		}
+		catch (InterruptedException e)
 		{
 			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 		}

@@ -1,6 +1,6 @@
-package com.tsp.client.controller;
+package com.tsp.viewer.controller;
 
-import com.tsp.client.model.GameModel;
+import com.tsp.viewer.model.GameModel;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.actors.Player;
 import com.tsp.packets.ActorPacket;
@@ -51,51 +51,29 @@ public class TCPClient extends Thread
 		{
 			connect();
 			model.setDungeon(getDungeon());
-			sendName(model.getMe().getName());
+			sendName("TSPVIEWER");
 			int id = this.getID();
-			if (id == -1)
+			model.setID(id);
+			model.setReady(true);
+			//Sets a timeout for continuous operation
+			clientSocket.setSoTimeout(100);
+			while (running)
 			{
-				//If receive -1: server error: QUIT
-				model.setQuit(true);
-				while (running)
+				synchronized (this)
 				{
+					//Gets a packet and put it on the queue
+					model.insertPacket(getPacket());
 					try
 					{
-						Thread.sleep(10);
+						Thread.sleep(50);
 					}
-					catch (Exception e)
+					catch (InterruptedException e)
 					{
+
 					}
 				}
 			}
-			else
-			{
-				//Continue with client
-				model.setID(id);
-				model.setMe(getPlayer());
 
-				//Tells the model that every thing is ready
-				model.setReady(true);
-
-				//Sets a timeout for continuous operation
-				clientSocket.setSoTimeout(100);
-				while (running)
-				{
-					synchronized (this)
-					{
-						//Gets a packet and put it on the queue
-						model.insertPacket(getPacket());
-						try
-						{
-							Thread.sleep(50);
-						}
-						catch (InterruptedException e)
-						{
-
-						}
-					}
-				}
-			}
 		}
 		catch (IOException e)
 		{
@@ -103,7 +81,7 @@ public class TCPClient extends Thread
 			model.setQuit(true);
 		}
 	}
-	
+
 	/**
 	 * Receives the player from the server
 	 *
@@ -120,7 +98,7 @@ public class TCPClient extends Thread
 			if (packet.getPacketType() == Packet.PacketType.ACTOR_PACKET)
 				if (((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
 				{
-					return (Player)(((ActorPacket) packet).getActor());
+					return (Player) (((ActorPacket) packet).getActor());
 				}
 		}
 		return null;
@@ -163,6 +141,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Connects to the server
+	 *
 	 * @throws IOException on Socket Error, and data stream errors
 	 */
 	public void connect() throws IOException
@@ -174,6 +153,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Sends the name of the client/player
+	 *
 	 * @param name The name of the client/player. I.E {@value "Tim"}
 	 * @throws IOException when the {@link DataOutputStream} errors
 	 */
@@ -184,6 +164,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Gets the ID of the player
+	 *
 	 * @return the ID of the player
 	 * @throws IOException when the {@link DataInputStream} errors
 	 */
@@ -194,6 +175,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Gets the dungeon map from the server
+	 *
 	 * @return an array containing the dungeon
 	 * @throws IOException when the {@link DataInputStream} errors
 	 */
@@ -212,6 +194,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Gets a packet from the server
+	 *
 	 * @return null if nothing was there, and a packet from the JSON sent from the server
 	 */
 	public Packet getPacket()
@@ -235,6 +218,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Sends a quit packet to the server showing the leaving of a player
+	 *
 	 * @throws IOException
 	 */
 	public void sendQuit() throws IOException
@@ -254,6 +238,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Stops the TCP Thread and then sends the quit packet
+	 *
 	 * @throws IOException
 	 */
 	public void quit() throws IOException
@@ -264,6 +249,7 @@ public class TCPClient extends Thread
 
 	/**
 	 * Sets the running value of the TCP thread
+	 *
 	 * @param running
 	 */
 	public void setRunning(boolean running)

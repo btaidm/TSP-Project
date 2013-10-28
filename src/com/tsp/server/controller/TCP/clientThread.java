@@ -37,6 +37,7 @@ class clientThread extends Thread
 	private Integer playerID;
 	Queue<Packet> outGoingPackets;
 	private boolean running = true;
+	boolean viewer = false;
 
 
 	private String BytesToString(byte[] bytes) throws IOException
@@ -84,9 +85,9 @@ class clientThread extends Thread
 			os = new DataOutputStream(clientSocket.getOutputStream());
 
 			sendDungeon(serverModel.getDungeonArray());
-			
+
 			int count = is.available();
-			while(count <= 0)
+			while (count <= 0)
 			{
 				count = is.available();
 			}
@@ -94,18 +95,26 @@ class clientThread extends Thread
 
 			is.read(name);
 
-			String PlayName = BytesToString(name).trim();
-			synchronized (this)
+			viewer = BytesToString(name).trim().equals("TSPVIEWER");
+			if (!viewer)
 			{
-				clientName = PlayName;
-				playerID = serverModel.addPlayer(PlayName);
-				os.writeInt(playerID);
-				
-				sendPlayer();
-				sendNewPlayer();
-				sendActors();
-			}
+				String PlayName = BytesToString(name).trim();
+				synchronized (this)
+				{
+					clientName = PlayName;
+					playerID = serverModel.addPlayer(PlayName);
+					os.writeInt(playerID);
 
+					sendPlayer();
+					sendNewPlayer();
+				}
+
+			}
+			else
+			{
+				os.writeInt(-1);
+			}
+			sendActors();
 
 			clientSocket.setSoTimeout(100);
 			/* Start the conversation. */
@@ -194,7 +203,8 @@ class clientThread extends Thread
 	  /*
 	   * Close the output stream, close the input stream, close the socket.
        */
-			serverModel.removePlayer(playerID);
+			if (!viewer)
+				serverModel.removePlayer(playerID);
 			is.close();
 			os.close();
 			clientSocket.close();

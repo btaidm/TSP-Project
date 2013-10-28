@@ -1,23 +1,17 @@
-package com.tsp.client.view;
-
-import java.awt.Point;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import com.googlecode.blacken.terminal.TerminalScreenSize;
-import com.tsp.client.controller.TCPClient;
-import com.tsp.client.event.EventType;
-import com.tsp.client.event.GameListener;
-import com.tsp.client.event.Listenable;
-import com.tsp.client.model.GameModel;
-import com.tsp.client.event.GameEvent;
+package com.tsp.viewer.view;
 
 import com.googlecode.blacken.colors.ColorNames;
 import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
 import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
+import com.googlecode.blacken.terminal.TerminalScreenSize;
+import com.tsp.viewer.controller.TCPClient;
+import com.tsp.viewer.event.EventType;
+import com.tsp.viewer.event.GameEvent;
+import com.tsp.viewer.event.GameListener;
+import com.tsp.viewer.event.Listenable;
+import com.tsp.viewer.model.GameModel;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorPacket;
@@ -25,6 +19,11 @@ import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.Packet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.awt.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GameView implements Listenable
 {
@@ -49,11 +48,11 @@ public class GameView implements Listenable
 		{
 			this.term = new SwingTerminal();
 
-			this.term.init("TSP Roguelike", 25, 80, TerminalScreenSize.SIZE_LARGE);
-			term.resize(25,80);
+			this.term.init("TSP Roguelike", 26 * 2 + 2, 86 * 2 + 2, TerminalScreenSize.SIZE_MAX);
+			//term.resize(25 * 2 + 2, 80 * 2 + 2);
 
 			this.curses = new CursesLikeAPI(this.term);
-			this.curses.resize(24, 80);
+			//this.curses.resize(25 * 2 + 2, 80 * 2 + 2);
 
 			ColorPalette palette = new ColorPalette();
 			palette.addAll(ColorNames.XTERM_256_COLORS, false);
@@ -86,7 +85,6 @@ public class GameView implements Listenable
 		int ch = BlackenKeys.NO_KEY;
 		while (!quit && !model.getQuit())
 		{
-			LOGGER.info("{}", model.getMe().toString());
 			processPackets();
 			ch = this.curses.getch(50);
 			process(ch);
@@ -134,17 +132,61 @@ public class GameView implements Listenable
 		this.curses.clear();
 		this.curses.setCursorLocation(-1, -1);
 
-		int zLevel = this.model.getMe().getZ();
 
 		//Use the model to draw on the screen
+
+		for (int i = 0; i < 4; i++)
+		{
+			drawFloor(i);
+		}
+
+		this.curses.refresh();
+	}
+
+	public void drawFloor(int floor)
+	{
+		int xOffset = 0;
+		int yOffset = 0;
+		switch (floor)
+		{
+			case 0:
+			{
+				xOffset = 0;
+				yOffset = 0;
+				break;
+			}
+			case 1:
+			{
+				xOffset = 81;
+				yOffset = 0;
+				break;
+			}
+			case 2:
+			{
+				xOffset = 0;
+				yOffset = 25;
+				break;
+			}
+			case 3:
+			{
+				xOffset = 81;
+				yOffset = 25;
+				break;
+			}
+		}
+
 		for (int i = 0; i < this.model.getDungeon().getRows(); i++)
 		{
 			for (int j = 0; j < this.model.getDungeon().getColumns(); j++)
 			{
-				this.term.set(i, j, this.model.getSymbol(i, j, zLevel), model.getColor(j, i, zLevel), 0);
+				this.term.set(i + yOffset,
+				              j + xOffset,
+				              this.model.getSymbol(i, j, floor),
+				              model.getColor(j, i, floor),
+				              0);
 			}
 		}
-		this.curses.refresh();
+
 	}
 
 	public void process(int ch)
@@ -155,87 +197,11 @@ public class GameView implements Listenable
 			default:
 			case BlackenKeys.NO_KEY:
 			{
-				if (attacked && model.getMe().isAttacking())
-				{
-					if (model.getMe().attemptAttackReset())
-					{
-						attackDelta = null;
-						attacked = false;
-
-						Actor player = model.getMe();
-						HashMap<String, Object> attack = new HashMap<String, Object>();
-						attack.put("ID", player.getId());
-						attack.put("attacking", false);
-						attack.put("deltaX", 0);
-						attack.put("deltaY", 0);
-
-						fireEvent(EventType.TURN_UPDATE, attack);
-					}
-				}
 				break;
 			}
 			case BlackenKeys.KEY_ESCAPE:
 				quit = true;
 				break;
-			case BlackenKeys.KEY_DOWN:
-			case 'j':
-				moved = this.model.attemptMove(Point3D.DOWN);
-				break;
-			case BlackenKeys.KEY_UP:
-			case 'k':
-				moved = this.model.attemptMove(Point3D.UP);
-				break;
-			case BlackenKeys.KEY_LEFT:
-			case 'h':
-				moved = this.model.attemptMove(Point3D.LEFT);
-				break;
-			case BlackenKeys.KEY_RIGHT:
-			case 'l':
-				moved = this.model.attemptMove(Point3D.RIGHT);
-				break;
-			case 'a':
-				if (attacked = this.model.attemptAttack(Point3D.LEFT))
-				{
-					attackDelta = Point3D.LEFT;
-				}
-				break;
-			case 'd':
-				if (attacked = this.model.attemptAttack(Point3D.RIGHT))
-				{
-					attackDelta = Point3D.RIGHT;
-				}
-				break;
-			case 's':
-				if (attacked = this.model.attemptAttack(Point3D.DOWN))
-				{
-					attackDelta = Point3D.DOWN;
-				}
-				break;
-			case 'w':
-				if (attacked = this.model.attemptAttack(Point3D.UP))
-				{
-					attackDelta = Point3D.UP;
-				}
-				break;
-		}
-		if (moved)
-		{
-			Actor player = model.getMe();
-			HashMap<String, Object> movement = new HashMap<String, Object>();
-			movement.put("ID", player.getId());
-			movement.put("X", player.getX());
-			movement.put("Y", player.getY());
-			movement.put("Z", player.getZ());
-			fireEvent(EventType.TURN_MOVE, movement);
-		}
-		if (attacked)
-		{
-			Actor player = model.getMe();
-			HashMap<String, Object> attack = new HashMap<String, Object>();
-			attack.put("ID", player.getId());
-			attack.put("X", (int) attackDelta.getX());
-			attack.put("Y", (int) attackDelta.getY());
-			fireEvent(EventType.TURN_ATTACK, attack);
 		}
 	}
 
