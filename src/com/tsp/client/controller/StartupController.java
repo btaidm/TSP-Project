@@ -16,13 +16,16 @@ public class StartupController implements ActionListener, MouseListener {
 	private InfoEntryView infoEntryScreen;
 	private HelpView helpScreen;
 	private AboutView aboutScreen;
+	private String server;
+	private String playerName;
 	private boolean gameStart;
+	private boolean host;
 
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
 		// Create new server and join game
 		if (arg0.getActionCommand().equals("Host Game")) {
-			System.out.println("Hosting game!");
+			host = true;
 		}
 		// Join game on existing server
 		else if (arg0.getActionCommand().equals("Join Game")) {
@@ -30,9 +33,9 @@ public class StartupController implements ActionListener, MouseListener {
 			infoEntryScreen.setVisible(true);
 		}
 		// Launch actual game in terminal window (TODO)
-		else if (arg0.getActionCommand().equals("Begin!")) {
-			System.out.println("Player: " + infoEntryScreen.getPlayer());			
-			System.out.println("Server: " + infoEntryScreen.getServer());	
+		else if (arg0.getActionCommand().equals("Begin!")) {		
+			server = infoEntryScreen.getServer();
+			playerName = infoEntryScreen.getPlayer();
 			gameStart = true;
 			infoEntryScreen.dispose();
 		}
@@ -50,6 +53,18 @@ public class StartupController implements ActionListener, MouseListener {
 	
 	public boolean hasGameStarted() {
 		return gameStart;
+	}
+	
+	public String getServer() {
+		return server;
+	}
+	
+	public String getPlayer() {
+		return playerName;
+	}
+	
+	public boolean isHost() {
+		return host;
 	}
 	
 	@Override

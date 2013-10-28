@@ -20,25 +20,31 @@ public class ClientMain
 		StartupView sv = new StartupView(sc);
 		sv.setVisible(true);
 
-		GameModel gm = new GameModel();
-		
 		TCPClient tcpClient = null;
-		
-		
+
 		while (!sc.hasGameStarted()) {
-			System.out.println("Startup running");
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		
+
 		try
 		{
-			tcpClient = new TCPClient(gm);
-			GameView gv = new GameView(gm, tcpClient);
-			GameController gc = new GameController();
-			ConnectionController cc = new ConnectionController();
+			if (!sc.isHost()) {
+				sv.dispose();
+				GameModel gm = new GameModel(sc.getPlayer());
+				tcpClient = new TCPClient(gm, sc.getServer(), 12000);
+				GameView gv = new GameView(gm, tcpClient);
+				GameController gc = new GameController();
+				ConnectionController cc = new ConnectionController(sc.getServer());
 
-			gv.addListener(gc);
-			gv.addListener(cc);
-			gv.play();
+				gv.addListener(gc);
+				gv.addListener(cc);
+				gv.play();
+			}
 		}
 		catch (UnknownHostException e)
 		{
