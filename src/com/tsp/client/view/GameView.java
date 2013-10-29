@@ -5,31 +5,38 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.googlecode.blacken.terminal.TerminalScreenSize;
-import com.tsp.client.controller.TCPClient;
-import com.tsp.client.event.EventType;
-import com.tsp.client.event.GameListener;
-import com.tsp.client.event.Listenable;
-import com.tsp.client.model.GameModel;
-import com.tsp.client.event.GameEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.googlecode.blacken.colors.ColorNames;
 import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
 import com.googlecode.blacken.terminal.BlackenKeys;
 import com.googlecode.blacken.terminal.CursesLikeAPI;
+import com.googlecode.blacken.terminal.TerminalScreenSize;
+import com.tsp.client.controller.TCPClient;
+import com.tsp.client.event.EventType;
+import com.tsp.client.event.GameEvent;
+import com.tsp.client.event.GameListener;
+import com.tsp.client.event.Listenable;
+import com.tsp.client.model.GameModel;
 import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
 import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.Packet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameView implements Listenable
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameView.class);
 
+	private final int OFFSET_TOP = 2;
+	private final int OFFSET_BOTTOM = 2;
+	private final int OFFSET_LEFT = 11;
+	private final int DUNGEON_HEIGHT = 24;
+	private final int SCREEN_HEIGHT = OFFSET_TOP + OFFSET_BOTTOM + DUNGEON_HEIGHT;
+	
 	SwingTerminal term;
 	CursesLikeAPI curses;
 	GameModel model;
@@ -49,11 +56,11 @@ public class GameView implements Listenable
 		{
 			this.term = new SwingTerminal();
 
-			this.term.init("TSP Roguelike", 25, 80, TerminalScreenSize.SIZE_LARGE);
-			term.resize(25,80);
+			this.term.init("TSP Rouglike", SCREEN_HEIGHT, 80, TerminalScreenSize.SIZE_MEDIUM);
+			term.resize(SCREEN_HEIGHT, 80);
 
 			this.curses = new CursesLikeAPI(this.term);
-			this.curses.resize(24, 80);
+			this.curses.resize(SCREEN_HEIGHT - 1, 80);
 
 			ColorPalette palette = new ColorPalette();
 			palette.addAll(ColorNames.XTERM_256_COLORS, false);
@@ -135,13 +142,31 @@ public class GameView implements Listenable
 		this.curses.setCursorLocation(-1, -1);
 
 		int zLevel = this.model.getMe().getZ();
-
+		
+		// Draw HUD
+		Player p = this.model.getMe();
+		drawString(p.getName(), OFFSET_LEFT, 0, p.getColor(), 0);
+		
+		String floorString = String.format("Floor %d", zLevel);
+		drawString(floorString, 80 + OFFSET_LEFT - floorString.length(), 0, p.getColor(), 0);
+		
+		StringBuilder healthBuilder = new StringBuilder();
+		for (int i = 0; i < p.getHealth(); i++) {
+			healthBuilder.append("\u2764");
+		}
+		drawString(healthBuilder.toString(), OFFSET_LEFT, OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2, p.getColor(), 0);
+		
+		String weapongString = "Currently Wielding " + p.getWeaponName();
+		drawString(weapongString, 80 + OFFSET_LEFT - weapongString.length(), OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2, p.getColor(), 0);
+		
+		// Draw Map
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.getDungeon().getRows(); i++)
 		{
 			for (int j = 0; j < this.model.getDungeon().getColumns(); j++)
 			{
-				this.term.set(i, j, this.model.getSymbol(i, j, zLevel), model.getColor(j, i, zLevel), 0);
+				// Add offsets to center the dungeon onscreen and allow room for the HUD
+				this.term.set(i+OFFSET_TOP, j+OFFSET_LEFT, this.model.getSymbol(i, j, zLevel), model.getColor(j, i, zLevel), 0);
 			}
 		}
 		this.curses.refresh();
@@ -259,6 +284,14 @@ public class GameView implements Listenable
 		for (GameListener l : this.listeners)
 		{
 			l.receiveEvent(ge);
+		}
+	}
+	
+	// Convinience method for drawing strings in the terminal
+	public void drawString(String s, int x, int y, int fg, int bg) {
+		for (int i = 0; i < s.length(); i++) {
+			String current = String.valueOf(s.charAt(i));
+			this.curses.set(y, x + i, current, fg, bg);
 		}
 	}
 }
