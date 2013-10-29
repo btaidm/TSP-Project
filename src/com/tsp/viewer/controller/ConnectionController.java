@@ -1,12 +1,11 @@
-package com.tsp.client.controller;
+package com.tsp.viewer.controller;
 
-import com.tsp.client.event.GameEvent;
-import com.tsp.client.event.GameListener;
+import com.tsp.viewer.event.GameEvent;
+import com.tsp.viewer.event.GameListener;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.AttackPacket;
 import com.tsp.packets.MovementPacket;
 import com.tsp.packets.Packet;
-import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

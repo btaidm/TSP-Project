@@ -1,18 +1,17 @@
-package com.tsp.client;
+package com.tsp.viewer;
 
-import com.tsp.client.controller.ConnectionController;
-import com.tsp.client.controller.GameController;
-import com.tsp.client.controller.TCPClient;
-import com.tsp.client.controller.StartupController;
-import com.tsp.client.model.GameModel;
-import com.tsp.client.view.GameView;
-import com.tsp.client.view.StartupView;
+import com.tsp.viewer.controller.GameController;
+import com.tsp.viewer.controller.StartupController;
+import com.tsp.viewer.controller.TCPClient;
+import com.tsp.viewer.model.GameModel;
+import com.tsp.viewer.view.GameView;
+import com.tsp.viewer.view.StartupView;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 
 
-public class ClientMain
+public class ViewerMain
 {
 	public static void main(String[] arguments)
 	{
@@ -22,14 +21,10 @@ public class ClientMain
 
 		TCPClient tcpClient = null;
 
-		while (!sc.hasGameStarted())
-		{
-			try
-			{
+		while (!sc.hasGameStarted()) {
+			try {
 				Thread.sleep(10);
-			}
-			catch (InterruptedException e)
-			{
+			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -37,19 +32,14 @@ public class ClientMain
 
 		try
 		{
-			if (!sc.isHost())
-			{
+			if (!sc.isHost()) {
 				sv.dispose();
-				GameModel gm = new GameModel((sc.getPlayer().trim().equals("") ? "Player" : sc.getPlayer().trim()));
-				tcpClient = new TCPClient(gm,
-				                          (sc.getServer().trim().equals("") ? "localhost" : sc.getServer().trim()),
-				                          12000);
+				GameModel gm = new GameModel(sc.getPlayer());
+				tcpClient = new TCPClient(gm, sc.getServer(), 12000);
 				GameView gv = new GameView(gm, tcpClient);
 				GameController gc = new GameController();
-				ConnectionController cc = new ConnectionController(sc.getServer());
 
 				gv.addListener(gc);
-				gv.addListener(cc);
 				gv.play();
 			}
 		}

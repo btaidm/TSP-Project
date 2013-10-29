@@ -28,6 +28,7 @@ public class TCPServer extends Thread
 
 	public TCPServer(ServerModel sm) throws IOException
 	{
+		super("TCP Server");
 		serverSocket = new ServerSocket(12000);
 		serverModel = sm;
 	}
@@ -56,11 +57,17 @@ public class TCPServer extends Thread
 					os.close();
 					clientSocket.close();
 				}
+				Thread.sleep(50);
 			}
 			catch (IOException e)
 			{
 				System.out.println(e);
 			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			}
+
 		}
 	}
 
