@@ -193,7 +193,10 @@ public class GameModel
 			if (actorUpdate.contains("remove"))
 			{
 				if (getMe().getId() == actorUpdate.getActorID())
+				{
+					me.setHealth(0);
 					setQuit(true);
+				}
 				else
 					otherActors.remove(actorUpdate.getActorID());
 			}
