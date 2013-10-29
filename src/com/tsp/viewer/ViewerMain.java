@@ -21,10 +21,14 @@ public class ViewerMain
 
 		TCPClient tcpClient = null;
 
-		while (!sc.hasGameStarted()) {
-			try {
+		while (!sc.hasGameStarted())
+		{
+			try
+			{
 				Thread.sleep(10);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e)
+			{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -32,10 +36,15 @@ public class ViewerMain
 
 		try
 		{
-			if (!sc.isHost()) {
+			if (!sc.isHost())
+			{
 				sv.dispose();
-				GameModel gm = new GameModel(sc.getPlayer());
-				tcpClient = new TCPClient(gm, sc.getServer(), 12000);
+				GameModel gm = new GameModel((sc.getPlayer().trim()
+						.equals("") ? "Player" : sc.getPlayer().trim()));
+				tcpClient = new TCPClient(gm,
+				                          (sc.getServer().trim().equals("") ? "localhost" : sc
+						                          .getServer().trim()),
+				                          12000);
 				GameView gv = new GameView(gm, tcpClient);
 				GameController gc = new GameController();
 
