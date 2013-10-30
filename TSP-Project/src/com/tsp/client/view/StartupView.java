@@ -35,7 +35,7 @@ public class StartupView extends JFrame {
 		add(blankLabel);
 		
 		JPanel buttons = new JPanel();
-		JButton hostButton = new JButton("Host Game");
+		JButton hostButton = new JButton("Host Server");
 		hostButton.setPreferredSize(new Dimension(250,30));
 		JButton joinButton = new JButton("Join Game");
 		joinButton.setPreferredSize(new Dimension(250,30));

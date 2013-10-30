@@ -24,7 +24,7 @@ public class StartupController implements ActionListener, MouseListener {
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
 		// Create new server and join game
-		if (arg0.getActionCommand().equals("Host Game")) {
+		if (arg0.getActionCommand().equals("Host Server")) {
 			host = true;
 		}
 		// Join game on existing server
