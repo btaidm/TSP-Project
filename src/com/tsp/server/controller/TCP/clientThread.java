@@ -180,7 +180,11 @@ class clientThread extends Thread
 		{
 			while (!outGoingPackets.isEmpty())
 			{
-				os.writeUTF(outGoingPackets.poll().toJSONString());
+				Packet packet = outGoingPackets.poll();
+				long start = System.currentTimeMillis();
+				os.writeUTF(packet.toJSONString());
+				long end = System.currentTimeMillis();
+				LOGGER.debug("Sent Packet: {}: {} ms", packet.toString(), end - start);
 			}
 		}
 	}
