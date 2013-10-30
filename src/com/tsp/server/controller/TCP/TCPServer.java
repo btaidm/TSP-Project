@@ -25,6 +25,7 @@ public class TCPServer extends Thread
 	private static final int maxClientsCount = 8;
 	private static final clientThread[] threads = new clientThread[maxClientsCount];
 	private final ServerModel serverModel;
+	private static boolean quit = false;
 
 	public TCPServer(ServerModel sm) throws IOException
 	{
@@ -36,7 +37,7 @@ public class TCPServer extends Thread
 	@Override
 	public void run()
 	{
-		while (true)
+		while (!quit)
 		{
 			try
 			{
@@ -78,6 +79,17 @@ public class TCPServer extends Thread
 			if (threads[i] != null)
 			{
 				threads[i].addOutGoingPacket(e);
+			}
+		}
+	}
+
+	public static void quit() throws IOException
+	{
+		for (int i = 0; i < maxClientsCount; i++)
+		{
+			if (threads[i] != null)
+			{
+				threads[i].quit();
 			}
 		}
 	}

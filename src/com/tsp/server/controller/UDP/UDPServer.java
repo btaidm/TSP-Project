@@ -17,6 +17,7 @@ import java.net.SocketException;
  */
 public class UDPServer extends Thread
 {
+	private static boolean quit =false;
 	ServerModel model;
 
 	public UDPServer(ServerModel serverModel)
@@ -32,7 +33,7 @@ public class UDPServer extends Thread
 		try
 		{
 			serverSocket = new DatagramSocket(12000);
-			while(true)
+			while(!quit)
 			{
 				byte[] receiveData = new byte[1024];
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -58,6 +59,11 @@ public class UDPServer extends Thread
 			if(serverSocket != null && serverSocket.isBound())
 				serverSocket.close();
 		}
+	}
+
+	public static void quit()
+	{
+		quit = true;
 	}
 
 }
