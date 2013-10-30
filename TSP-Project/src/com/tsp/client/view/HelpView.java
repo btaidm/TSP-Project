@@ -15,7 +15,7 @@ public class HelpView extends JFrame {
 
 	public HelpView(StartupController controller) {
 		setTitle("Help");
-		setSize(350,600);
+		setSize(350,500);
 		setResizable(false);
 		setLayout(new FlowLayout(FlowLayout.CENTER));
 		
@@ -38,7 +38,7 @@ public class HelpView extends JFrame {
 		JTextArea characterText = new JTextArea();
 		characterText.setBackground(null);
 		characterText.setFocusable(false);
-		characterText.setPreferredSize(new Dimension(325,200));
+		characterText.setPreferredSize(new Dimension(325,150));
 		characterText.setText("@ Player \n" +
 				"# Wall \n" + 
 				"\u25B2 Stairs Up\n" +
