@@ -21,9 +21,11 @@ public class ClientMain
 	public static void main(String[] arguments) throws IOException
 	{
 
-		StartupController sc = new StartupController();
-		StartupView sv = new StartupView(sc);
+		StartupView sv = new StartupView();
+		StartupController sc = new StartupController(sv);
+		sv.addListener(sc);
 		sv.setVisible(true);
+		
 		Thread server = null;
 		// Wait for user to start game
 		while (!sc.hasGameStarted())
@@ -67,13 +69,9 @@ public class ClientMain
 
 	private static void runClient(StartupController sc, Thread server) throws IOException
 	{
-		GameModel gm = new GameModel(
-				sc.getPlayer() != null ? sc.getPlayer().trim().equals("") ? "Player" : sc.getPlayer()
-						.trim() : "Player");
-		TCPClient tcpClient = new TCPClient(gm,
-		                                    sc.getPlayer() != null ? (sc.getServer().trim()
-				                                    .equals("") ? "localhost" : sc.getServer().trim()) : "localhost",
-		                                    12000);
+		GameModel gm = new GameModel(validOrDefault(sc.getPlayer(), "Player"));
+		TCPClient tcpClient = new TCPClient(gm, validOrDefault(sc.getServer(), "localhost"), 12000);
+		
 		GameView gv = null;
 		try
 		{
@@ -103,5 +101,17 @@ public class ClientMain
 		tcpServer.start();
 		udpServer.start();
 		serverModel.run();
+	}
+	
+	/**
+	 * Takes a string to test and the default to return if the
+	 * string test fails and returns the valid one
+	 * @param test
+	 * @param def
+	 */
+	private static String validOrDefault(String test, String def) {
+		if (test != null && !test.trim().equals(""))
+			return test;
+		return def;
 	}
 }
