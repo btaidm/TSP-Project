@@ -20,7 +20,7 @@ public class ClientMain
 	static ServerModel serverModel = null;
 	public static void main(String[] arguments) throws IOException
 	{
-
+		System.setProperty("TEST", "false");
 		StartupController sc = new StartupController();
 		StartupView sv = new StartupView(sc);
 		sv.setVisible(true);

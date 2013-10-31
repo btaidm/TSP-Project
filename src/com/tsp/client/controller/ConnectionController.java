@@ -195,7 +195,7 @@ public class ConnectionController implements GameListener
 		{
 			if (socket != null)
 			{
-				LOGGER.info("Sending Packet @ {}: {}", System.currentTimeMillis(), packet);
+				//LOGGER.info("Sending Packet @ {}: {}", System.currentTimeMillis(), packet);
 				byte[] data = packet.toJSONString().getBytes();
 				DatagramPacket response = new DatagramPacket(data,
 				                                             data.length,

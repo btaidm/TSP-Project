@@ -11,10 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+
+import static com.tsp.util.Util.BytesToString;
 
 /**
  * Created with IntelliJ IDEA.
@@ -39,20 +40,6 @@ class clientThread extends Thread
 	private boolean running = true;
 	boolean viewer = false;
 
-
-	private String BytesToString(byte[] bytes) throws IOException
-	{
-		InputStreamReader input = new InputStreamReader(
-				new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
-
-		StringBuilder str = new StringBuilder();
-
-		for (int value; (value = input.read()) != -1; )
-			str.append((char) value);
-
-
-		return str.toString();
-	}
 
 	public void addOutGoingPacket(Packet packet)
 	{
@@ -153,6 +140,7 @@ class clientThread extends Thread
 	private void sendPlayer() throws IOException
 	{
 		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
+		os.writeInt(player.toJSONString().getBytes().length);
 		os.writeUTF(player.toJSONString());
 	}
 
@@ -182,6 +170,7 @@ class clientThread extends Thread
 			{
 				Packet packet = outGoingPackets.poll();
 				long start = System.currentTimeMillis();
+				os.writeInt(packet.toJSONString().getBytes().length);
 				os.writeUTF(packet.toJSONString());
 				long end = System.currentTimeMillis();
 				LOGGER.debug("Sent Packet: {}: {} ms", packet.toString(), end - start);
@@ -223,7 +212,10 @@ class clientThread extends Thread
 		for (int z = 0; z < serverModel.getFloors(); z++)
 			for (int x = 0; x < serverModel.getColumns(); x++)
 				for (int y = 0; y < serverModel.getRows(); y++)
+				{
+					os.writeInt(strings[z][x][y].getBytes().length);
 					os.writeUTF(strings[z][x][y]);
+				}
 	}
 
 	private void sendBytes(byte[] myByteArray) throws IOException
@@ -251,6 +243,8 @@ class clientThread extends Thread
 		ArrayList<Actor> actors = serverModel.getActors();
 		for (Actor actor : actors)
 		{
+			ActorPacket packet = new ActorPacket(actor);
+			os.writeInt(packet.toJSONString().getBytes().length);
 			os.writeUTF(new ActorPacket(actor).toJSONString());
 		}
 
