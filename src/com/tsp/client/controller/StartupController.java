@@ -5,10 +5,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import com.tsp.client.ClientMain;
 import com.tsp.client.view.AboutView;
 import com.tsp.client.view.HelpView;
-import com.tsp.client.view.InfoEntryView;
 import com.tsp.client.view.StartupView;
 
 public class StartupController implements ActionListener, MouseListener {
