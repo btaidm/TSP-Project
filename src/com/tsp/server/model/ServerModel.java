@@ -51,6 +51,7 @@ public class ServerModel implements Runnable
 		incomingPackets = new LinkedList<Packet>();
 		outgoingPackets = new LinkedList<Packet>();
 		generateDungeon();
+		dungeon.revealAll();
 	}
 
 	public int addPlayer(String playName)

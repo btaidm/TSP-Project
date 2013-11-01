@@ -153,6 +153,7 @@ public class GameView implements Listenable
 
 		int zLevel = this.model.getMe().getZ();
 
+
 		// Draw HUD
 		Player p = this.model.getMe();
 		drawString(p.getName(), OFFSET_LEFT, 0, p.getColor(), 0);
@@ -179,6 +180,7 @@ public class GameView implements Listenable
 		           0);
 
 		// Draw Map
+
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.getDungeon().getRows(); i++)
 		{

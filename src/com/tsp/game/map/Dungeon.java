@@ -1,6 +1,7 @@
 package com.tsp.game.map;
 
 import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
 
 import java.util.*;
 
@@ -17,11 +18,16 @@ public class Dungeon
 	public static final String WALL = "#";
 	public static final String STAIR_UP = "\u25B2";
 	public static final String STAIR_DOWN = "\u25BC";
+	public static final String UNREVEALED = "&";
+	int fogOfWarSize = 6;
 	int cols = 80;
 	int rows = 24;
 	int floors = 4;
 	private String[][][] dungeon;
 	private MapGenerator mapGenerator;
+	boolean visible[][][];
+	FogOfWar fogOfWar;
+	private boolean reveal = false;
 
 	/**
 	 *
@@ -30,6 +36,7 @@ public class Dungeon
 	{
 		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		generateDungeon();
+		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
 	}
 
 	/**
@@ -38,6 +45,15 @@ public class Dungeon
 	private void generateDungeon()
 	{
 		dungeon = mapGenerator.getMap(floors, rows, cols);
+		visible = new boolean[dungeon.length][dungeon[0].length][dungeon[0][0].length];
+		for(int i = 0; i < visible.length; i++){
+			for(int j = 0; j < visible[0].length; j++){
+				for(int k = 0; k < visible[0][0].length; k++){
+					visible[i][j][k] = false;
+				}
+			}
+		}
+		
 	}
 
 	/**
@@ -53,6 +69,7 @@ public class Dungeon
 		this.rows = rows;
 		this.floors = floors;
 		generateDungeon();
+		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
 	}
 
 	/**
@@ -63,6 +80,7 @@ public class Dungeon
 	{
 		this.mapGenerator = mapGenerator;
 		generateDungeon();
+		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
 	}
 
 	/**
@@ -80,6 +98,7 @@ public class Dungeon
 		this.floors = floors;
 		this.mapGenerator = mapGenerator;
 		generateDungeon();
+		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
 	}
 
 	/**
@@ -93,6 +112,15 @@ public class Dungeon
 		this.floors = dungeon.length;
 		this.cols = dungeon[0].length;
 		this.rows = dungeon[0][0].length;
+		visible = new boolean[this.floors][this.cols][this.rows];
+		for(int i = 0; i < dungeon.length; i++){
+			for(int j = 0; j < dungeon[i].length; j++){
+				for(int k = 0; k < dungeon[i][j].length; k++){
+					visible[i][j][k] = false;
+				}
+			}
+		}
+		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
 	}
 
 	/**
@@ -102,6 +130,24 @@ public class Dungeon
 	public String[][][] getDungeon()
 	{
 		return dungeon;
+	}
+	
+	public void updateVisibleDungeon(Player player){
+		boolean[][][] currentRevealed = fogOfWar.GetFogOfWar(player.getPos());
+		visible = mergeVisible(currentRevealed, visible);
+	}
+	
+	private boolean[][][] mergeVisible(boolean[][][] currentRevealed, boolean[][][] visible){
+		for(int i = 0; i < currentRevealed.length; i++){
+			for(int j = 0; j < currentRevealed[0].length; j++){
+				for(int k = 0; k < currentRevealed[0][0].length; k++){
+					if(currentRevealed[i][j][k] || visible[i][j][k]){
+						visible[i][j][k] = true;
+					}
+				}
+			}
+		}
+		return visible;
 	}
 
 	/**
@@ -191,6 +237,16 @@ public class Dungeon
 	{
 		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR));
 	}
+	
+	public boolean isUnrevealed(Point3D point)
+	{
+		return validPoint(point) && (getTile(point).equals(UNREVEALED));
+	}
+	
+	public boolean isUnrevealed(int x, int y, int z)
+	{
+		return isUnrevealed(new Point3D(x, y, z));
+	}
 
 	/**
 	 *
@@ -199,7 +255,23 @@ public class Dungeon
 	 */
 	public String getTile(Point3D point)
 	{
-		return dungeon[point.getZ()][((int) point.getX())][((int) point.getY())];
+		String retPoint;
+		if(reveal || pointIsVisible(point)){
+			retPoint = dungeon[point.getZ()][((int) point.getX())][((int) point.getY())];
+		}
+		else{
+			retPoint = UNREVEALED;
+		}
+		return retPoint;
+	}
+	
+	public void revealAll()
+	{
+		this.reveal = true;
+	}
+	
+	private boolean pointIsVisible(Point3D point){
+		return visible[point.getZ()][point.x][point.y];
 	}
 
 	/**
@@ -827,5 +899,71 @@ public class Dungeon
 		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR) || getTile(point).equals(STAIR_DOWN) ||
 		                             getTile(point).equals(STAIR_UP));
 	}
+	
+	private class FogOfWar {
+		
+		String[][][] map;
+		int circleSize;
+		
+		public FogOfWar(String[][][] dungeon, int circleSize){
+			this.map = dungeon;
+			this.circleSize = circleSize;
+		}
+		/**
+		 * finds all points visible in a circle around the given point
+		 * 
+		 * @param x
+		 * @param y
+		 * @param z
+		 * @return
+		 */
+		public boolean [][][] GetFogOfWar(Point3D loc){
+			boolean [][][] visible = new boolean[map.length][map[0].length][map[0][0].length];
+			int count = 0;
+			for(int z = 0; z < visible.length; z++){
+				for(int x = 0; x < visible[z].length; x++){
+					for(int y = 0; y < visible[z][x].length; y++){
+						Point3D temp = new Point3D(x,y,z);
+						visible[z][x][y] = IsVisible(loc, temp);
+						count++;
+					}
+				}
+			}
+			System.out.println(count);
+			return visible;
+		}
+		
+		/**
+		 * if the floors are the same, then checks distance around point;
+		 * 
+		 * @param loc
+		 * @param temp
+		 * @return
+		 */
+		public boolean IsVisible(Point3D loc, Point3D temp){
+			boolean isVisible = false;
+			if(loc.getZ() == temp.getZ()){
+				if((int)Distance(loc, temp) <= circleSize){
+					isVisible = true;
+				}
+			}
+			return isVisible;
+		}
+		/**
+		 * uses pythagorian theorum to find distance
+		 * 
+		 * @param a
+		 * @param b
+		 * @return
+		 */
+		public double Distance(Point3D a, Point3D b){
+			double horDist = a.x - b.x;
+			double vertDist = a.y - b.y;
+			double totalDist = (vertDist * vertDist) + (horDist * horDist);
+			totalDist = Math.sqrt(totalDist);
+			return totalDist;
+		}
+	}
 
+	
 }
