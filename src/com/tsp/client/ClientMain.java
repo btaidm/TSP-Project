@@ -18,7 +18,7 @@ import java.net.UnknownHostException;
 public class ClientMain
 {
 	static ServerModel serverModel = null;
-	public static void main(String[] arguments) throws IOException
+	public static void main(String[] arguments) throws IOException, InterruptedException
 	{
 
 		StartupView sv = new StartupView();
@@ -67,7 +67,7 @@ public class ClientMain
 		System.exit(0);
 	}
 
-	private static void runClient(StartupController sc, Thread server) throws IOException
+	private static void runClient(StartupController sc, Thread server) throws IOException, InterruptedException
 	{
 		GameModel gm = new GameModel(validOrDefault(sc.getPlayer(), "Player"));
 		TCPClient tcpClient = new TCPClient(gm, validOrDefault(sc.getServer(), "localhost"), 12000);
