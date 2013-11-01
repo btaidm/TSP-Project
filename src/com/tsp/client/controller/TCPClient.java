@@ -49,12 +49,25 @@ public class TCPClient extends Thread
 	//byte[] arrIN = new byte[SIZE];
 	//byte[] arrOUT = new byte[SIZE];
 
+	public int getPort()
+	{
+		return port;
+	}
+
+	public InetAddress getAddr()
+	{
+		return addr;
+	}
+
+
+
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void run()
 	{
+		running = true;
 		try
 		{
 			connect();
@@ -74,6 +87,7 @@ public class TCPClient extends Thread
 					catch (Exception e)
 					{
 					}
+
 				}
 			}
 			else
@@ -110,6 +124,7 @@ public class TCPClient extends Thread
 			LOGGER.info("{}", e.toString());
 			model.setQuit(true);
 		}
+		System.out.println("Quiting");
 	}
 
 	/**
