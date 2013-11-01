@@ -6,6 +6,7 @@ import com.tsp.game.actors.Player;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.Packet;
 import com.tsp.packets.QuitPacket;
+import com.tsp.util.Rolling;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -40,6 +41,8 @@ public class TCPClient extends Thread
 	DataInputStream is;
 	DataOutputStream os;
 	boolean running = true;
+
+	private final Rolling rolling = new Rolling(100);
 
 	/**
 	 * {@inheritDoc}
@@ -218,10 +221,17 @@ public class TCPClient extends Thread
 	{
 		try
 		{
+			long start = System.currentTimeMillis();
+
 			String json = is.readUTF();
+
+			long end = System.currentTimeMillis();
+
 			Object object = JSONValue.parse(json);
 			if (object != null && object instanceof JSONObject)
 			{
+				rolling.add(end-start);
+				LOGGER.debug("Average Retrieve time: {}", rolling.getAverage());
 				Packet packet = Packet.parseJSONObject((JSONObject) object);
 				return packet;
 			}

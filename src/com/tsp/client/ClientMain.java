@@ -7,6 +7,9 @@ import com.tsp.client.controller.StartupController;
 import com.tsp.client.model.GameModel;
 import com.tsp.client.view.GameView;
 import com.tsp.client.view.StartupView;
+import com.tsp.server.controller.TCP.TCPServer;
+import com.tsp.server.controller.UDP.UDPServer;
+import com.tsp.server.model.ServerModel;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -14,57 +17,101 @@ import java.net.UnknownHostException;
 
 public class ClientMain
 {
-	public static void main(String[] arguments)
+	static ServerModel serverModel = null;
+	public static void main(String[] arguments) throws IOException
 	{
-		StartupController sc = new StartupController();
-		StartupView sv = new StartupView(sc);
+
+		StartupView sv = new StartupView();
+		StartupController sc = new StartupController(sv);
+		sv.addListener(sc);
 		sv.setVisible(true);
-
-		TCPClient tcpClient = null;
-
+		
+		Thread server = null;
+		// Wait for user to start game
 		while (!sc.hasGameStarted())
 		{
+			// Run server if user wants to host
+			if (sc.isHost())
+			{
+				sv.dispose();
+				(server = new Thread(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						try
+						{
+							runServer();
+						}
+						catch (IOException e)
+						{
+							e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+						}
+					}
+				})).start();
+				break;
+			}
 			try
 			{
 				Thread.sleep(10);
 			}
 			catch (InterruptedException e)
 			{
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+		// Launch client
+		if (sv.isVisible())
+			sv.dispose();
+		runClient(sc, server);
+		System.exit(0);
+	}
 
+	private static void runClient(StartupController sc, Thread server) throws IOException
+	{
+		GameModel gm = new GameModel(validOrDefault(sc.getPlayer(), "Player"));
+		TCPClient tcpClient = new TCPClient(gm, validOrDefault(sc.getServer(), "localhost"), 12000);
+		
+		GameView gv = null;
 		try
 		{
-			if (!sc.isHost())
-			{
-				sv.dispose();
-				GameModel gm = new GameModel((sc.getPlayer().trim().equals("") ? "Player" : sc.getPlayer().trim()));
-				tcpClient = new TCPClient(gm,
-				                          (sc.getServer().trim().equals("") ? "localhost" : sc.getServer().trim()),
-				                          12000);
-				GameView gv = new GameView(gm, tcpClient);
-				GameController gc = new GameController();
-				ConnectionController cc = new ConnectionController(sc.getServer());
-
-				gv.addListener(gc);
-				gv.addListener(cc);
-				gv.play();
-			}
-		}
-		catch (UnknownHostException e)
-		{
-			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			gv = new GameView(gm, tcpClient);
 		}
 		catch (InterruptedException e)
 		{
-			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+			e.printStackTrace();
 		}
-		System.exit(0);
+		GameController gc = new GameController();
+		ConnectionController cc = new ConnectionController(sc.getServer());
+
+		gv.addListener(gc);
+		gv.addListener(cc);
+		gv.play();
+		if(server != null)
+		{
+			serverModel.quit();
+		}
+	}
+
+	private static void runServer() throws IOException
+	{
+		serverModel = new ServerModel();
+		UDPServer udpServer = new UDPServer(serverModel);
+		TCPServer tcpServer = new TCPServer(serverModel);
+		tcpServer.start();
+		udpServer.start();
+		serverModel.run();
+	}
+	
+	/**
+	 * Takes a string to test and the default to return if the
+	 * string test fails and returns the valid one
+	 * @param test
+	 * @param def
+	 */
+	private static String validOrDefault(String test, String def) {
+		if (test != null && !test.trim().equals(""))
+			return test;
+		return def;
 	}
 }

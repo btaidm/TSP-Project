@@ -36,7 +36,7 @@ public class GameView implements Listenable
 	private final int OFFSET_LEFT = 11;
 	private final int DUNGEON_HEIGHT = 24;
 	private final int SCREEN_HEIGHT = OFFSET_TOP + OFFSET_BOTTOM + DUNGEON_HEIGHT;
-
+	private final int SCREEN_WIDTH = 80;
 
 	SwingTerminal term;
 	CursesLikeAPI curses;
@@ -58,11 +58,11 @@ public class GameView implements Listenable
 		{
 			this.term = new SwingTerminal();
 
-			this.term.init("TSP Rouglike", SCREEN_HEIGHT, 80, TerminalScreenSize.SIZE_MEDIUM);
-			term.resize(SCREEN_HEIGHT, 80);
+			this.term.init("TSP Rouglike", SCREEN_HEIGHT, SCREEN_WIDTH, TerminalScreenSize.SIZE_MEDIUM);
+			term.resize(SCREEN_HEIGHT, SCREEN_WIDTH);
 
 			this.curses = new CursesLikeAPI(this.term);
-			this.curses.resize(SCREEN_HEIGHT - 1, 80);
+			this.curses.resize(SCREEN_HEIGHT - 1, SCREEN_WIDTH);
 
 			ColorPalette palette = new ColorPalette();
 			palette.addAll(ColorNames.XTERM_256_COLORS, false);
@@ -159,7 +159,7 @@ public class GameView implements Listenable
 		drawString(p.getName(), OFFSET_LEFT, 0, p.getColor(), 0);
 
 		String floorString = String.format("Floor %d", zLevel);
-		drawString(floorString, 80 + OFFSET_LEFT - floorString.length(), 0, p.getColor(), 0);
+		drawString(floorString, SCREEN_WIDTH + OFFSET_LEFT - floorString.length(), 0, p.getColor(), 0);
 
 		StringBuilder healthBuilder = new StringBuilder();
 		for (int i = 0; i < p.getHealth(); i++)
@@ -174,7 +174,7 @@ public class GameView implements Listenable
 
 		String weapongString = "Currently Wielding " + p.getWeaponName();
 		drawString(weapongString,
-		           80 + OFFSET_LEFT - weapongString.length(),
+		           SCREEN_WIDTH + OFFSET_LEFT - weapongString.length(),
 		           OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
 		           p.getColor(),
 		           0);
@@ -209,7 +209,7 @@ public class GameView implements Listenable
 		drawString(p.getName(), OFFSET_LEFT, 0, 255 - fade, 0);
 
 		String floorString = String.format("Floor %d", zLevel);
-		drawString(floorString, 80 + OFFSET_LEFT - floorString.length(), 0, 255 - fade, 0);
+		drawString(floorString, SCREEN_WIDTH + OFFSET_LEFT - floorString.length(), 0, 255 - fade, 0);
 
 		StringBuilder healthBuilder = new StringBuilder();
 		for (int i = 0; i < p.getHealth(); i++)
@@ -230,7 +230,7 @@ public class GameView implements Listenable
 
 		String weapongString = "Currently Wielding " + p.getWeaponName();
 		drawString(weapongString,
-		           80 + OFFSET_LEFT - weapongString.length(),
+		           SCREEN_WIDTH + OFFSET_LEFT - weapongString.length(),
 		           OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
 		           255 - fade,
 		           0);

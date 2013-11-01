@@ -7,9 +7,11 @@ import com.tsp.game.map.Point3D;
 import com.tsp.game.actors.Player;
 import com.tsp.packets.*;
 import com.tsp.server.controller.TCP.TCPServer;
+import com.tsp.server.controller.UDP.UDPServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -330,5 +332,11 @@ public class ServerModel implements Runnable
 		actorUpdate.insertValue("remove", "remove");
 
 		outgoingPackets.add(actorUpdate);
+	}
+
+	public void quit() throws IOException
+	{
+		TCPServer.quit();
+		UDPServer.quit();
 	}
 }
