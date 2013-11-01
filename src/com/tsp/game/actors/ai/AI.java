@@ -1,5 +1,6 @@
-package com.tsp.game.actors;
+package com.tsp.game.actors.ai;
 
+import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Dungeon;
 import com.tsp.packets.Packet;
 

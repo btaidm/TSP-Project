@@ -1,6 +1,6 @@
 package com.tsp.server.model;
 
-import com.tsp.game.actors.AI;
+import com.tsp.game.actors.ai.AI;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;

@@ -1,5 +1,8 @@
 package com.tsp.server;
 
+import com.tsp.game.actors.ai.AI;
+import com.tsp.game.actors.ai.AIFactory;
+import com.tsp.game.actors.ai.SimpleAI;
 import com.tsp.server.controller.TCP.TCPServer;
 import com.tsp.server.controller.UDP.UDPServer;
 import com.tsp.server.model.ServerModel;
@@ -21,6 +24,8 @@ public class ServerMain
 
 	public static void main(String[] args) throws Exception
 	{
+		AIFactory.addAI(SimpleAI.class);
+		AI ai = AIFactory.getAI();
 		ServerModel serverModel = new ServerModel();
 		UDPServer udpServer = new UDPServer(serverModel);
 		TCPServer tcpServer = new TCPServer(serverModel);
@@ -28,5 +33,6 @@ public class ServerMain
 		udpServer.start();
 
 		serverModel.run();
+
 	}
 }
