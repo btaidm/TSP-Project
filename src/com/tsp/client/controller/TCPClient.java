@@ -44,12 +44,25 @@ public class TCPClient extends Thread
 
 	private final Rolling rolling = new Rolling(100);
 
+	public int getPort()
+	{
+		return port;
+	}
+
+	public InetAddress getAddr()
+	{
+		return addr;
+	}
+
+
+
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void run()
 	{
+		running = true;
 		try
 		{
 			connect();
@@ -69,6 +82,7 @@ public class TCPClient extends Thread
 					catch (Exception e)
 					{
 					}
+
 				}
 			}
 			else
@@ -105,6 +119,7 @@ public class TCPClient extends Thread
 			LOGGER.info("{}", e.toString());
 			model.setQuit(true);
 		}
+		System.out.println("Quiting");
 	}
 	
 	/**

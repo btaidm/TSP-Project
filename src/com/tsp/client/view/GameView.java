@@ -47,6 +47,8 @@ public class GameView implements Listenable
 	private TCPClient tcpClient;
 	private Point attackDelta;
 	private boolean esc = false;
+	private boolean restart = true;
+	private boolean playing = true;
 
 	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
@@ -54,28 +56,13 @@ public class GameView implements Listenable
 		this.model = model;
 		this.tcpClient = tcpClient;
 		this.listeners = new ArrayList<GameListener>();
-		if (setUp())
-		{
-			this.term = new SwingTerminal();
-
-			this.term.init("TSP Rouglike", SCREEN_HEIGHT, SCREEN_WIDTH, TerminalScreenSize.SIZE_MEDIUM);
-			term.resize(SCREEN_HEIGHT, SCREEN_WIDTH);
-
-			this.curses = new CursesLikeAPI(this.term);
-			this.curses.resize(SCREEN_HEIGHT - 1, SCREEN_WIDTH);
-
-			ColorPalette palette = new ColorPalette();
-			palette.addAll(ColorNames.XTERM_256_COLORS, false);
-			palette.putMapping(ColorNames.SVG_COLORS);
-
-			this.curses.setPalette(palette);
-		}
+		this.term = new SwingTerminal();
 
 	}
 
 	public boolean setUp() throws InterruptedException
 	{
-		tcpClient.start();
+		(tcpClient = new TCPClient(this.model, tcpClient.getAddr(), tcpClient.getPort())).start();
 		while (!model.getReady() && !model.getQuit())
 		{
 			Thread.sleep(20);
@@ -88,8 +75,29 @@ public class GameView implements Listenable
 		return true;
 	}
 
+	private void init() throws InterruptedException
+	{
+		restart = false;
+		if (setUp())
+		{
 
-	public void play() throws IOException
+			this.term.init("TSP Rouglike", SCREEN_HEIGHT, SCREEN_WIDTH, TerminalScreenSize.SIZE_MEDIUM);
+			term.resize(SCREEN_HEIGHT, SCREEN_WIDTH);
+
+			this.curses = new CursesLikeAPI(this.term);
+			this.curses.resize(SCREEN_HEIGHT - 1, SCREEN_WIDTH);
+
+			ColorPalette palette = new ColorPalette();
+			palette.addAll(ColorNames.XTERM_256_COLORS, false);
+			palette.putMapping(ColorNames.SVG_COLORS);
+
+			this.curses.setPalette(palette);
+			quit = false;
+			playing = true;
+		}
+	}
+
+	private void run() throws IOException, InterruptedException
 	{
 		// Main loop of the game happens here
 		int ch = BlackenKeys.NO_KEY;
@@ -103,7 +111,8 @@ public class GameView implements Listenable
 			fireEvent(EventType.TURN_END, new HashMap<String, Object>());
 		}
 		quit = false;
-		while (!esc && !quit)
+		playing = false;
+		while (!esc && */!quit)
 		{
 			ch = this.curses.getch(50);
 			process(ch);
@@ -113,6 +122,15 @@ public class GameView implements Listenable
 		}
 
 		this.close();
+	}
+
+	public void play() throws IOException, InterruptedException
+	{
+		while (restart)
+		{
+			init();
+			run();
+		}
 	}
 
 	private void processPackets()
@@ -136,7 +154,7 @@ public class GameView implements Listenable
 		}
 	}
 
-	private void close() throws IOException
+	private void close() throws IOException, InterruptedException
 	{
 		if (curses != null)
 			curses.quit();
@@ -144,6 +162,7 @@ public class GameView implements Listenable
 		if (term != null)
 			term.quit();
 		tcpClient.quit();
+		tcpClient.join();
 	}
 
 	public void refresh()
@@ -217,7 +236,7 @@ public class GameView implements Listenable
 			healthBuilder.append("\u2764");
 		}
 
-		for (int i = (p.getHealth() < 0 ? 0 : p.getHealth()) ; i < 10; i++)
+		for (int i = (p.getHealth() < 0 ? 0 : p.getHealth()); i < 10; i++)
 		{
 			healthBuilder.append(" ");
 		}
@@ -282,6 +301,14 @@ public class GameView implements Listenable
 			case BlackenKeys.KEY_ESCAPE:
 				quit = true;
 				esc = true;
+				break;
+			case 'r':
+				if (!playing)
+				{
+					quit = true;
+					restart = true;
+					fadeCount = 0;
+				}
 				break;
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
@@ -394,13 +421,18 @@ public class GameView implements Listenable
 		int fade = fadeCount / 2;
 		refresh(fade);
 		drawString("GAME OVER",
-		           (curses.getWidth()/ 2) - "GAME OVER".length() / 2,
+		           (curses.getWidth() / 2) - "GAME OVER".length() / 2,
 		           ((curses.getHeight()) / 2 - 1),
 		           232 + fade,
 		           0);
 		drawString("YOU ARE DEAD",
-		           ((curses.getWidth()/ 2)) - "YOU ARE DEAD".length() / 2,
+		           ((curses.getWidth() / 2)) - "YOU ARE DEAD".length() / 2,
 		           ((curses.getHeight()) / 2 + 1),
+		           232 + fade,
+		           0);
+		drawString("ESC - QUIT    R - RESTART",
+		           ((curses.getWidth() / 2)) - "ESC - QUIT    R - RESTART".length() / 2,
+		           ((curses.getHeight()) / 2 + 3),
 		           232 + fade,
 		           0);
 		curses.refresh();
