@@ -96,6 +96,7 @@ public class GameModel
 	public void setDungeon(String[][][] dungeon)
 	{
 		this.dungeon = new Dungeon(dungeon);
+		this.dungeon.revealAll();
 	}
 
 
