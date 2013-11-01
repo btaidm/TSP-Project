@@ -19,7 +19,7 @@ public class Dungeon
 	public static final String STAIR_UP = "\u25B2";
 	public static final String STAIR_DOWN = "\u25BC";
 	public static final String UNREVEALED = "&";
-	int fogOfWarSize = 6;
+	int fogOfWarSize = 2;
 	int cols = 80;
 	int rows = 24;
 	int floors = 4;

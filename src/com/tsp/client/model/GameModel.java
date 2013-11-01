@@ -84,7 +84,7 @@ public class GameModel {
 			return me.getColor();
 		}
 		if (dungeon.isUnrevealed(x, y, z))
-			return 232 + 12;
+			return 232 + 9;
 		
 		for (Actor a : otherActors.values()) {
 			if (a.getPos().equals(new Point3D(x, y, z))) {
