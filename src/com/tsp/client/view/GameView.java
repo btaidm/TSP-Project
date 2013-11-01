@@ -112,7 +112,7 @@ public class GameView implements Listenable
 		}
 		quit = false;
 		playing = false;
-		while (!esc && */!quit)
+		while (!esc && !quit)
 		{
 			ch = this.curses.getch(50);
 			process(ch);
