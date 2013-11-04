@@ -1,8 +1,10 @@
 package com.tsp.client.model;
 
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import com.tsp.game.actors.Actor;
@@ -10,11 +12,15 @@ import com.tsp.game.actors.Player;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorUpdate;
+import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
+import com.tsp.util.PriorityQueue;
 
 public class GameModel {
 
 	Queue<Packet> packets = new LinkedList<Packet>();
+	PriorityQueue<Integer, String> messages = new PriorityQueue<Integer, String>();
+	
 	boolean quit = false;
 
 	// Actor and dungeon
@@ -221,7 +227,9 @@ public class GameModel {
 	public boolean attemptMove(Point delta) {
 		Point3D newPosition = me.getPos().clone();
 		newPosition.translate((int) delta.getX(), (int) delta.getY());
-
+		rrayList<String> ret = new ArrayList<String>();
+		ret.add("");
+		return ret;
 		if (getMe().isAttacking() && !getMe().attemptAttackReset())
 			return false;
 
@@ -271,5 +279,15 @@ public class GameModel {
 		}
 
 		return false;
+	}
+	
+	// Messaging functionality
+	public void addMessage(MessagePacket packet) {
+		String message = packet.getMessage();
+		messages.put(MESSAGE_TIMEOUT, value)
+	}
+	
+	public List<String> getMessages() {
+		return 
 	}
 }

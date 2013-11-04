@@ -25,6 +25,7 @@ import com.tsp.game.actors.Player;
 import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.ActorUpdate;
+import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
 
 public class GameView implements Listenable
@@ -33,11 +34,12 @@ public class GameView implements Listenable
 
 	private final int OFFSET_TOP = 2;
 	private final int OFFSET_BOTTOM = 2;
-	private final int OFFSET_LEFT = 11;
+	private final int OFFSET_LEFT = 0;
 	private final int DUNGEON_HEIGHT = 24;
 	private final int SCREEN_HEIGHT = OFFSET_TOP + OFFSET_BOTTOM + DUNGEON_HEIGHT;
 	private final int SCREEN_WIDTH = 80;
-
+	private final int HARD_MESSAGE_LENGTH_LIMIT = 21;
+	
 	SwingTerminal term;
 	CursesLikeAPI curses;
 	GameModel model;
@@ -123,7 +125,7 @@ public class GameView implements Listenable
 
 		this.close();
 	}
-
+	
 	public void play() throws IOException, InterruptedException
 	{
 		while (restart)
@@ -140,16 +142,20 @@ public class GameView implements Listenable
 			Packet packet = model.getPacket();
 			switch (packet.getPacketType())
 			{
-				case ACTOR_PACKET:
-					ActorPacket actorPacket = (ActorPacket) packet;
-					model.addActor(actorPacket.getActor());
-					break;
-				case UPDATE_PACKET:
-					ActorUpdate actorUpdate = (ActorUpdate) packet;
-					model.update(actorUpdate);
-					break;
-				default:
-					break;
+			case ACTOR_PACKET:
+				ActorPacket actorPacket = (ActorPacket) packet;
+				model.addActor(actorPacket.getActor());
+				break;
+			case UPDATE_PACKET:
+				ActorUpdate actorUpdate = (ActorUpdate) packet;
+				model.update(actorUpdate);
+				break;
+			case MESSAGE_PACKET:
+				MessagePacket messageUpdate = (MessagePacket) packet;
+				model.addMessage(messageUpdate);
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -186,20 +192,29 @@ public class GameView implements Listenable
 			healthBuilder.append("\u2764");
 		}
 		drawString(healthBuilder.toString(),
-		           OFFSET_LEFT,
-		           OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
-		           p.getColor(),
-		           0);
+				OFFSET_LEFT,
+				OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
+				p.getColor(),
+				0);
 
 		String weapongString = "Currently Wielding " + p.getWeaponName();
 		drawString(weapongString,
-		           SCREEN_WIDTH + OFFSET_LEFT - weapongString.length(),
-		           OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
-		           p.getColor(),
-		           0);
+				SCREEN_WIDTH + OFFSET_LEFT - weapongString.length(),
+				OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
+				p.getColor(),
+				0);
+
+		// Draw the message screen
+		int level = 0;
+		for (String m : this.model.getMessages()) {
+			if (m.length() > HARD_MESSAGE_LENGTH_LIMIT) {
+				m = m.substring(0, HARD_MESSAGE_LENGTH_LIMIT);
+			}
+			drawString(m, OFFSET_LEFT + SCREEN_WIDTH+1, level, 255, 0);
+			level++;
+		}
 
 		// Draw Map
-
 		//Use the model to draw on the screen
 		for (int i = 0; i < this.model.getDungeon().getRows(); i++)
 		{
@@ -207,10 +222,10 @@ public class GameView implements Listenable
 			{
 				// Add offsets to center the dungeon onscreen and allow room for the HUD
 				this.term.set(i + OFFSET_TOP,
-				              j + OFFSET_LEFT,
-				              this.model.getSymbol(i, j, zLevel),
-				              model.getColor(j, i, zLevel),
-				              0);
+						j + OFFSET_LEFT,
+						this.model.getSymbol(i, j, zLevel),
+						model.getColor(j, i, zLevel),
+						0);
 			}
 		}
 		this.curses.refresh();
@@ -242,17 +257,17 @@ public class GameView implements Listenable
 		}
 
 		drawString(healthBuilder.toString(),
-		           OFFSET_LEFT,
-		           OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
-		           255 - fade,
-		           0);
+				OFFSET_LEFT,
+				OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
+				255 - fade,
+				0);
 
 		String weapongString = "Currently Wielding " + p.getWeaponName();
 		drawString(weapongString,
-		           SCREEN_WIDTH + OFFSET_LEFT - weapongString.length(),
-		           OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
-		           255 - fade,
-		           0);
+				SCREEN_WIDTH + OFFSET_LEFT - weapongString.length(),
+				OFFSET_BOTTOM + DUNGEON_HEIGHT + OFFSET_TOP - 2,
+				255 - fade,
+				0);
 
 		// Draw Map
 		//Use the model to draw on the screen
@@ -262,10 +277,10 @@ public class GameView implements Listenable
 			{
 				// Add offsets to center the dungeon onscreen and allow room for the HUD
 				this.term.set(i + OFFSET_TOP,
-				              j + OFFSET_LEFT,
-				              this.model.getSymbol(i, j, zLevel),
-				              255 - fade,
-				              0);
+						j + OFFSET_LEFT,
+						this.model.getSymbol(i, j, zLevel),
+						255 - fade,
+						0);
 			}
 		}
 	}
@@ -275,89 +290,89 @@ public class GameView implements Listenable
 		boolean moved = false;
 		switch (ch)
 		{
-			default:
-			case BlackenKeys.NO_KEY:
-			{
-				if (!model.getQuit())
-					if (attacked && model.getMe().isAttacking())
-					{
-						if (model.getMe().attemptAttackReset())
-						{
-							attackDelta = null;
-							attacked = false;
-
-							Actor player = model.getMe();
-							HashMap<String, Object> attack = new HashMap<String, Object>();
-							attack.put("ID", player.getId());
-							attack.put("attacking", false);
-							attack.put("deltaX", 0);
-							attack.put("deltaY", 0);
-
-							fireEvent(EventType.TURN_UPDATE, attack);
-						}
-					}
-				break;
-			}
-			case BlackenKeys.KEY_ESCAPE:
-				quit = true;
-				esc = true;
-				break;
-			case 'r':
-				if (!playing)
+		default:
+		case BlackenKeys.NO_KEY:
+		{
+			if (!model.getQuit())
+				if (attacked && model.getMe().isAttacking())
 				{
-					quit = true;
-					restart = true;
-					fadeCount = 0;
+					if (model.getMe().attemptAttackReset())
+					{
+						attackDelta = null;
+						attacked = false;
+
+						Actor player = model.getMe();
+						HashMap<String, Object> attack = new HashMap<String, Object>();
+						attack.put("ID", player.getId());
+						attack.put("attacking", false);
+						attack.put("deltaX", 0);
+						attack.put("deltaY", 0);
+
+						fireEvent(EventType.TURN_UPDATE, attack);
+					}
 				}
-				break;
-			case BlackenKeys.KEY_DOWN:
-			case 'j':
-				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.DOWN);
-				break;
-			case BlackenKeys.KEY_UP:
-			case 'k':
-				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.UP);
-				break;
-			case BlackenKeys.KEY_LEFT:
-			case 'h':
-				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.LEFT);
-				break;
-			case BlackenKeys.KEY_RIGHT:
-			case 'l':
-				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.RIGHT);
-				break;
-			case 'a':
-				if (!model.getQuit())
-					if (attacked = this.model.attemptAttack(Point3D.LEFT))
-					{
-						attackDelta = Point3D.LEFT;
-					}
-				break;
-			case 'd':
-				if (!model.getQuit())
-					if (attacked = this.model.attemptAttack(Point3D.RIGHT))
-					{
-						attackDelta = Point3D.RIGHT;
-					}
-				break;
-			case 's':
-				if (!model.getQuit())
-					if (attacked = this.model.attemptAttack(Point3D.DOWN))
-					{
-						attackDelta = Point3D.DOWN;
-					}
-				break;
-			case 'w':
-				if (!model.getQuit())
-					if (attacked = this.model.attemptAttack(Point3D.UP))
-					{
-						attackDelta = Point3D.UP;
-					}
-				break;
+			break;
+		}
+		case BlackenKeys.KEY_ESCAPE:
+			quit = true;
+			esc = true;
+			break;
+		case 'r':
+			if (!playing)
+			{
+				quit = true;
+				restart = true;
+				fadeCount = 0;
+			}
+			break;
+		case BlackenKeys.KEY_DOWN:
+		case 'j':
+			if (!model.getQuit())
+				moved = this.model.attemptMove(Point3D.DOWN);
+			break;
+		case BlackenKeys.KEY_UP:
+		case 'k':
+			if (!model.getQuit())
+				moved = this.model.attemptMove(Point3D.UP);
+			break;
+		case BlackenKeys.KEY_LEFT:
+		case 'h':
+			if (!model.getQuit())
+				moved = this.model.attemptMove(Point3D.LEFT);
+			break;
+		case BlackenKeys.KEY_RIGHT:
+		case 'l':
+			if (!model.getQuit())
+				moved = this.model.attemptMove(Point3D.RIGHT);
+			break;
+		case 'a':
+			if (!model.getQuit())
+				if (attacked = this.model.attemptAttack(Point3D.LEFT))
+				{
+					attackDelta = Point3D.LEFT;
+				}
+			break;
+		case 'd':
+			if (!model.getQuit())
+				if (attacked = this.model.attemptAttack(Point3D.RIGHT))
+				{
+					attackDelta = Point3D.RIGHT;
+				}
+			break;
+		case 's':
+			if (!model.getQuit())
+				if (attacked = this.model.attemptAttack(Point3D.DOWN))
+				{
+					attackDelta = Point3D.DOWN;
+				}
+			break;
+		case 'w':
+			if (!model.getQuit())
+				if (attacked = this.model.attemptAttack(Point3D.UP))
+				{
+					attackDelta = Point3D.UP;
+				}
+			break;
 		}
 		if (moved)
 		{
@@ -421,20 +436,20 @@ public class GameView implements Listenable
 		int fade = fadeCount / 2;
 		refresh(fade);
 		drawString("GAME OVER",
-		           (curses.getWidth() / 2) - "GAME OVER".length() / 2,
-		           ((curses.getHeight()) / 2 - 1),
-		           232 + fade,
-		           0);
+				(curses.getWidth() / 2) - "GAME OVER".length() / 2,
+				((curses.getHeight()) / 2 - 1),
+				232 + fade,
+				0);
 		drawString("YOU ARE DEAD",
-		           ((curses.getWidth() / 2)) - "YOU ARE DEAD".length() / 2,
-		           ((curses.getHeight()) / 2 + 1),
-		           232 + fade,
-		           0);
+				((curses.getWidth() / 2)) - "YOU ARE DEAD".length() / 2,
+				((curses.getHeight()) / 2 + 1),
+				232 + fade,
+				0);
 		drawString("ESC - QUIT    R - RESTART",
-		           ((curses.getWidth() / 2)) - "ESC - QUIT    R - RESTART".length() / 2,
-		           ((curses.getHeight()) / 2 + 3),
-		           232 + fade,
-		           0);
+				((curses.getWidth() / 2)) - "ESC - QUIT    R - RESTART".length() / 2,
+				((curses.getHeight()) / 2 + 3),
+				232 + fade,
+				0);
 		curses.refresh();
 		if (fade < 23)
 			fadeCount++;
