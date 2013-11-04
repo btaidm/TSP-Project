@@ -19,7 +19,8 @@ public class Dungeon
 	public static final String STAIR_UP = "\u25B2";
 	public static final String STAIR_DOWN = "\u25BC";
 	public static final String UNREVEALED = "&";
-	int fogOfWarSize = 2;
+	int fogOfWarHeight = 2;
+	int fogOfWarWidth = 4;
 	int cols = 80;
 	int rows = 24;
 	int floors = 4;
@@ -36,7 +37,7 @@ public class Dungeon
 	{
 		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		generateDungeon();
-		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
+		fogOfWar = new FogOfWar(dungeon , fogOfWarHeight, fogOfWarWidth);
 	}
 
 	/**
@@ -69,7 +70,7 @@ public class Dungeon
 		this.rows = rows;
 		this.floors = floors;
 		generateDungeon();
-		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
+		fogOfWar = new FogOfWar(dungeon , fogOfWarHeight, fogOfWarWidth);
 	}
 
 	/**
@@ -80,7 +81,7 @@ public class Dungeon
 	{
 		this.mapGenerator = mapGenerator;
 		generateDungeon();
-		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
+		fogOfWar = new FogOfWar(dungeon , fogOfWarHeight, fogOfWarWidth);
 	}
 
 	/**
@@ -98,7 +99,7 @@ public class Dungeon
 		this.floors = floors;
 		this.mapGenerator = mapGenerator;
 		generateDungeon();
-		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
+		fogOfWar = new FogOfWar(dungeon , fogOfWarHeight, fogOfWarWidth);
 	}
 
 	/**
@@ -120,7 +121,7 @@ public class Dungeon
 				}
 			}
 		}
-		fogOfWar = new FogOfWar(dungeon , fogOfWarSize);
+		fogOfWar = new FogOfWar(dungeon , fogOfWarHeight, fogOfWarWidth);
 	}
 
 	/**
@@ -903,11 +904,14 @@ public class Dungeon
 	private class FogOfWar {
 		
 		String[][][] map;
-		int circleSize;
+		double height;
+		double width;
 		
-		public FogOfWar(String[][][] dungeon, int circleSize){
+		
+		public FogOfWar(String[][][] dungeon, double height, double width){
 			this.map = dungeon;
-			this.circleSize = circleSize;
+			this.height = height;
+			this.width = width;
 		}
 		/**
 		 * finds all points visible in a circle around the given point
@@ -943,8 +947,13 @@ public class Dungeon
 		public boolean IsVisible(Point3D loc, Point3D temp){
 			boolean isVisible = false;
 			if(loc.getZ() == temp.getZ()){
-				if((int)Distance(loc, temp) <= circleSize){
-					isVisible = true;
+				if(Math.abs(loc.x - temp.x) < width || Math.abs(loc.y - temp.y)< height){
+					if(Math.abs(loc.x - temp.x) < width && Math.abs(loc.y - temp.y)< height){
+						isVisible = true;
+					}
+					else if(Distance(temp, loc) < (height + width)/2){
+						isVisible = true;
+					}
 				}
 			}
 			return isVisible;
@@ -953,7 +962,7 @@ public class Dungeon
 		 * uses pythagorian theorum to find distance
 		 * 
 		 * @param a
-		 * @param b
+		 * @param b6
 		 * @return
 		 */
 		public double Distance(Point3D a, Point3D b){
