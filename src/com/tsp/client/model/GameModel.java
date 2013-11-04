@@ -1,6 +1,7 @@
 package com.tsp.client.model;
 
 import java.awt.Point;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,12 +15,13 @@ import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
-import com.tsp.util.PriorityQueue;
 
 public class GameModel {
 
+	private int MESSAGE_TIMEOUT = 50;
+	
 	Queue<Packet> packets = new LinkedList<Packet>();
-	PriorityQueue<Integer, String> messages = new PriorityQueue<Integer, String>();
+	List<SimpleEntry<Integer, String>> messages = new ArrayList<SimpleEntry<Integer, String>>();
 	
 	boolean quit = false;
 
@@ -227,9 +229,7 @@ public class GameModel {
 	public boolean attemptMove(Point delta) {
 		Point3D newPosition = me.getPos().clone();
 		newPosition.translate((int) delta.getX(), (int) delta.getY());
-		rrayList<String> ret = new ArrayList<String>();
-		ret.add("");
-		return ret;
+		
 		if (getMe().isAttacking() && !getMe().attemptAttackReset())
 			return false;
 
@@ -284,10 +284,29 @@ public class GameModel {
 	// Messaging functionality
 	public void addMessage(MessagePacket packet) {
 		String message = packet.getMessage();
-		messages.put(MESSAGE_TIMEOUT, value)
+		SimpleEntry<Integer, String> newEntry = new SimpleEntry<Integer, String>(MESSAGE_TIMEOUT, message);
+		
+		// Make sure that this message doesn't already exist
+		for (int i = 0; i < messages.size(); i++) {
+			if (messages.get(i).getValue().equals(message))
+				return;
+		}
+		messages.add(newEntry);
 	}
 	
 	public List<String> getMessages() {
-		return 
+		// Decrement the scores of all the messages by one
+		List<String> ret = new ArrayList<String>();
+		
+		for (int i = 0; i < messages.size(); i++) {
+			SimpleEntry<Integer, String> current = messages.get(i);
+			Integer newKey = current.getKey().intValue() - 1;
+			if (newKey > 0) {
+				messages.set(i, new SimpleEntry<Integer, String>(newKey, current.getValue()));
+				ret.add(current.getValue());
+			}
+		}
+		
+		return ret;
 	}
 }

@@ -153,6 +153,10 @@ public abstract class Packet implements JSONAware
 					}
 					return actorUpdate;
 				}
+				case MESSAGE_PACKET:
+				{
+					return new MessagePacket(obj.get("message").toString());
+				}
 				default:
 					throw new IllegalArgumentException("Not a valid packet");
 			}
