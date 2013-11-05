@@ -153,8 +153,8 @@ public class ServerModel implements Runnable
 	{
 		while (running)
 		{
-			processPackets();
 			processAI();
+			processPackets();
 			sendPackets();
 			try
 			{
