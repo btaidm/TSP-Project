@@ -49,6 +49,7 @@ public class GameView implements Listenable
 	private boolean esc = false;
 	private boolean restart = true;
 	private boolean playing = true;
+	private boolean initStuff = true;
 
 	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
@@ -57,12 +58,14 @@ public class GameView implements Listenable
 		this.tcpClient = tcpClient;
 		this.listeners = new ArrayList<GameListener>();
 		this.term = new SwingTerminal();
-
 	}
 
 	public boolean setUp() throws InterruptedException
 	{
+
 		(tcpClient = new TCPClient(this.model, tcpClient.getAddr(), tcpClient.getPort())).start();
+		model.setQuit(false);
+		model.setReady(false);
 		while (!model.getReady() && !model.getQuit())
 		{
 			Thread.sleep(20);
@@ -80,20 +83,28 @@ public class GameView implements Listenable
 		restart = false;
 		if (setUp())
 		{
+			if (initStuff)
+			{
+				this.term.init("TSP Rouglike", SCREEN_HEIGHT, SCREEN_WIDTH, TerminalScreenSize.SIZE_MEDIUM);
+				term.resize(SCREEN_HEIGHT, SCREEN_WIDTH);
 
-			this.term.init("TSP Rouglike", SCREEN_HEIGHT, SCREEN_WIDTH, TerminalScreenSize.SIZE_MEDIUM);
-			term.resize(SCREEN_HEIGHT, SCREEN_WIDTH);
+				this.curses = new CursesLikeAPI(this.term);
+				this.curses.resize(SCREEN_HEIGHT - 1, SCREEN_WIDTH);
 
-			this.curses = new CursesLikeAPI(this.term);
-			this.curses.resize(SCREEN_HEIGHT - 1, SCREEN_WIDTH);
+				ColorPalette palette = new ColorPalette();
+				palette.addAll(ColorNames.XTERM_256_COLORS, false);
+				palette.putMapping(ColorNames.SVG_COLORS);
 
-			ColorPalette palette = new ColorPalette();
-			palette.addAll(ColorNames.XTERM_256_COLORS, false);
-			palette.putMapping(ColorNames.SVG_COLORS);
-
-			this.curses.setPalette(palette);
+				this.curses.setPalette(palette);
+				initStuff = false;
+			}
+			model.setQuit(false);
 			quit = false;
 			playing = true;
+		}
+		else
+		{
+			esc = true;
 		}
 	}
 
@@ -156,10 +167,10 @@ public class GameView implements Listenable
 
 	private void close() throws IOException, InterruptedException
 	{
-		if (curses != null)
+		if (curses != null && !restart)
 			curses.quit();
 
-		if (term != null)
+		if (term != null && !restart)
 			term.quit();
 		tcpClient.quit();
 		tcpClient.join();
