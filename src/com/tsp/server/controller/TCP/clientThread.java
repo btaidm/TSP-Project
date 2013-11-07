@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -30,7 +33,7 @@ class clientThread extends Thread
 	private String clientName = null;
 	private DataInputStream is = null;
 	private DataOutputStream os = null;
-	private Socket clientSocket = null;
+	private SocketChannel clientSocket = null;
 	private final clientThread[] threads;
 	private int maxClientsCount;
 	private ServerModel serverModel = null;
@@ -62,7 +65,7 @@ class clientThread extends Thread
 		}
 	}
 
-	public clientThread(Socket clientSocket, clientThread[] threads, ServerModel sm)
+	public clientThread(SocketChannel clientSocket, clientThread[] threads, ServerModel sm)
 	{
 		this.outGoingPackets = new LinkedList<Packet>();
 		this.clientSocket = clientSocket;
@@ -81,8 +84,6 @@ class clientThread extends Thread
 		   /*
 		    * Create input and output streams for this client.
 	        */
-			is = new DataInputStream(clientSocket.getInputStream());
-			os = new DataOutputStream(clientSocket.getOutputStream());
 
 			sendDungeon(serverModel.getDungeonArray());
 
@@ -116,7 +117,7 @@ class clientThread extends Thread
 			}
 			sendActors();
 
-			clientSocket.setSoTimeout(100);
+			clientSocket.socket().setSoTimeout(100);
 			/* Start the conversation. */
 			while (running)
 			{
@@ -153,14 +154,14 @@ class clientThread extends Thread
 	private void sendPlayer() throws IOException
 	{
 		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
-		os.writeUTF(player.toJSONString());
+		writeString(player.toJSONString());
 	}
 
 	private void processIncoming()
 	{
 		try
 		{
-			String json = is.readUTF();
+			String json = readString();
 			Object object = JSONValue.parse(json);
 			if (object != null && object instanceof JSONObject)
 			{
@@ -174,6 +175,25 @@ class clientThread extends Thread
 		}
 	}
 
+	private String readString() throws IOException
+	{
+		ByteBuffer bytes = ByteBuffer.allocate(4);
+		int bytesRead = clientSocket.read(bytes);
+		if(bytesRead != 4)
+			throw new IOException("Could not read in bytes for String Length");
+		int size = bytes.getInt();
+		ByteBuffer stringBuff = ByteBuffer.allocate(size);
+		int totalBytesRead = 0;
+		while(totalBytesRead < size)
+		{
+			totalBytesRead+=clientSocket.read(stringBuff);
+		}
+		CharBuffer decodedString = Charset.forName("UTF-8").decode(stringBuff);
+		String ret = decodedString.toString();
+		LOGGER.trace("{}",ret);
+		return ret;
+	}
+
 	private void processPackets() throws IOException
 	{
 		synchronized (this)
@@ -182,7 +202,7 @@ class clientThread extends Thread
 			{
 				Packet packet = outGoingPackets.poll();
 				long start = System.currentTimeMillis();
-				os.writeUTF(packet.toJSONString());
+				writeString(packet.toJSONString());
 				long end = System.currentTimeMillis();
 				LOGGER.debug("Sent Packet: {}: {} ms", packet.toString(), end - start);
 			}
@@ -209,8 +229,8 @@ class clientThread extends Thread
        */
 			if (!viewer)
 				serverModel.removePlayer(playerID);
-			is.close();
-			os.close();
+			//is.close();
+			//os.close();
 			clientSocket.close();
 		}
 	}
@@ -223,26 +243,9 @@ class clientThread extends Thread
 		for (int z = 0; z < serverModel.getFloors(); z++)
 			for (int x = 0; x < serverModel.getColumns(); x++)
 				for (int y = 0; y < serverModel.getRows(); y++)
-					os.writeUTF(strings[z][x][y]);
-	}
-
-	private void sendBytes(byte[] myByteArray) throws IOException
-	{
-		sendBytes(myByteArray, 0, myByteArray.length);
-	}
-
-	private void sendBytes(byte[] myByteArray, int start, int length) throws IOException
-	{
-		if (length < 0)
-			throw new IllegalArgumentException("Negative length not allowed");
-		if (start < 0 || start >= myByteArray.length)
-			throw new IndexOutOfBoundsException("Out of Bounds: " + start);
-
-		os.writeInt(length);
-		if (length > 0)
-		{
-			os.write(myByteArray, start, length);
-		}
+				{
+					writeString(strings[z][x][y]);
+				}
 	}
 
 	private void sendActors() throws IOException
@@ -251,7 +254,7 @@ class clientThread extends Thread
 		ArrayList<Actor> actors = serverModel.getActors();
 		for (Actor actor : actors)
 		{
-			os.writeUTF(new ActorPacket(actor).toJSONString());
+			writeString(new ActorPacket(actor).toJSONString());
 		}
 
 	}
@@ -261,5 +264,16 @@ class clientThread extends Thread
 		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
 		TCPServer.addOutGoingPacket(player);
 	}
+
+	protected void writeString(String string) throws IOException
+	{
+		byte[] stringBytes = string.getBytes(Charset.forName("UTF-8"));
+		Integer size = stringBytes.length;
+		ByteBuffer buf = ByteBuffer.allocate(4 + size);
+		buf.putInt(size).put(stringBytes);
+		clientSocket.write(buf);
+	}
+
+	protected void writ
 }
 

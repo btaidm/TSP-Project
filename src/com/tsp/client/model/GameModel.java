@@ -207,20 +207,36 @@ public class GameModel
 			}
 			else
 			{
+				boolean meMoved = false;
 				Actor actor = (getMe().getId() == actorUpdate.getActorID() ? getMe()
 						: otherActors.get(actorUpdate.getActorID()));
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("X"))
+				if (actorUpdate.contains("X"))
+				{
 					actor.setX(((Long) actorUpdate.getValue("X")).intValue());
+					if(actor.getId() == me.getId())
+					{
+						meMoved = true;
+					}
+				}
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("Y"))
+				if (actorUpdate.contains("Y"))
+				{
 					actor.setY(((Long) actorUpdate.getValue("Y")).intValue());
+					if(actor.getId() == me.getId())
+					{
+						meMoved = true;
+					}
+				}
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("Z"))
+				if (actorUpdate.contains("Z"))
+				{
 					actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
+					if(actor.getId() == me.getId())
+					{
+						meMoved = true;
+					}
+				}
 
 				if (actorUpdate.contains("health"))
 					actor.setHealth(((Long) actorUpdate.getValue("health"))
@@ -229,15 +245,20 @@ public class GameModel
 				if (actorUpdate.contains("symbol"))
 					actor.setSymbol((String) actorUpdate.getValue("symbol"));
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("attacking")
+				if (actorUpdate.contains("attacking")
 				    && actorUpdate.contains("deltaX")
 				    && actorUpdate.contains("deltaY"))
+				{
 					((Player) actor).setAttacking((Boolean) actorUpdate
 							.getValue("attacking"), new Point3D(
 							((Long) actorUpdate.getValue("deltaX")).intValue(),
 							((Long) actorUpdate.getValue("deltaY")).intValue(),
 							0));
+				}
+				if(meMoved)
+				{
+					dungeon.updateVisibleDungeon(me);
+				}
 			}
 		}
 	}

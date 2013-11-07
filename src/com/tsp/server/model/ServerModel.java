@@ -11,6 +11,7 @@ import com.tsp.server.controller.UDP.UDPServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -153,7 +154,7 @@ public class ServerModel implements Runnable
 	{
 		while (running)
 		{
-			processPackets();
+			//processPackets();
 			processAI();
 			sendPackets();
 			try
@@ -167,7 +168,7 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void sendPackets()
+	private synchronized void sendPackets()
 	{
 		//LOGGER.info("{}: {}: Model: Processing Outgoing Packets", Thread.currentThread().getName(),Thread.currentThread().getId());
 		while (!outgoingPackets.isEmpty())
@@ -176,12 +177,41 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void processAI()
+	private synchronized void processAI()
 	{
 		//LOGGER.info("{}: {}: Model: AI turns", Thread.currentThread().getName(),Thread.currentThread().getId());
 		for (AI ai : ais.values())
 		{
 			ai.turn(dungeon, getActors());
+		}
+	}
+
+	public void processPacket(Packet packet)
+	{
+		switch (packet.getPacketType())
+		{
+			case MOVEMENTPACKET:
+				MovementPacket movementPacket = (MovementPacket) packet;
+				processMovement(movementPacket);
+				System.out.println(packet.toString());
+				break;
+			case ACTOR_PACKET:
+				ActorPacket actorPacket = (ActorPacket) packet;
+				processActor(actorPacket);
+				System.out.println(packet.toString());
+				break;
+			case UPDATE_PACKET:
+				ActorUpdate actorUpdate = (ActorUpdate) packet;
+				processUpdate(actorUpdate);
+				System.out.println(packet.toString());
+				break;
+			case ATTACK_PACKET:
+				AttackPacket attackPacket = (AttackPacket) packet;
+				processAttack(attackPacket);
+				System.out.println(packet.toString());
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -221,39 +251,42 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void processAttack(AttackPacket attackPacket)
+	private synchronized void processAttack(AttackPacket attackPacket)
 	{
 		LOGGER.info("Processing attack from playerID: {}", attackPacket.getAttacker());
-		ArrayList<Actor> actors = getActors();
-		Player attacker = getPlayer(attackPacket.getAttacker());
-		attacker.setAttacking(true, new Point3D(attackPacket.getDeltaX(), attackPacket.getDeltaY(), 0));
-		ActorUpdate attackUpdate = new ActorUpdate(attacker.getId());
-
-		attackUpdate.insertValue("attacking", true);
-		attackUpdate.insertValue("deltaX", (int) attacker.getDelta().getX());
-		attackUpdate.insertValue("deltaY", (int) attacker.getDelta().getY());
-		outgoingPackets.add(attackUpdate);
-
-		Point3D attackDest = attacker.getAttackPos();
-		for (Actor a : actors)
+		if (attemptAttack(attackPacket.getAttacker(), new Point3D(attackPacket.getDeltaX(), attackPacket.getDeltaY())))
 		{
-			if (a.getId() != attackPacket.getAttacker())
+			ArrayList<Actor> actors = getActors();
+			Player attacker = getPlayer(attackPacket.getAttacker());
+			attacker.setAttacking(true, new Point3D(attackPacket.getDeltaX(), attackPacket.getDeltaY(), 0));
+			ActorUpdate attackUpdate = new ActorUpdate(attacker.getId());
+
+			attackUpdate.insertValue("attacking", true);
+			attackUpdate.insertValue("deltaX", (int) attacker.getDelta().getX());
+			attackUpdate.insertValue("deltaY", (int) attacker.getDelta().getY());
+			outgoingPackets.add(attackUpdate);
+
+			Point3D attackDest = attacker.getAttackPos();
+			for (Actor a : actors)
 			{
-				if (a.checkHit(attackDest))
+				if (a.getId() != attackPacket.getAttacker())
 				{
-					attacker.hit(a);
-					ActorUpdate aUpdate = new ActorUpdate(a.getId());
-					if (a.getHealth() <= 0)
-						aUpdate.insertValue("remove", "remove");
-					else
-						aUpdate.insertValue("health", a.getHealth());
-					outgoingPackets.add(aUpdate);
+					if (a.checkHit(attackDest))
+					{
+						attacker.hit(a);
+						ActorUpdate aUpdate = new ActorUpdate(a.getId());
+						if (a.getHealth() <= 0)
+							aUpdate.insertValue("remove", "remove");
+						else
+							aUpdate.insertValue("health", a.getHealth());
+						outgoingPackets.add(aUpdate);
+					}
 				}
 			}
 		}
 	}
 
-	private void processUpdate(ActorUpdate actorUpdate)
+	private synchronized void processUpdate(ActorUpdate actorUpdate)
 	{
 		LOGGER.info("Processing update for playerID: {}", actorUpdate.getActorID());
 		if (players.containsKey(actorUpdate.getActorID()))
@@ -293,25 +326,25 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void processActor(ActorPacket actorPacket)
+	private synchronized void processActor(ActorPacket actorPacket)
 	{
 		LOGGER.info("Processing Actor");
 	}
 
-	private void processMovement(MovementPacket movementPacket)
+	private synchronized void processMovement(MovementPacket movementPacket)
 	{
 		LOGGER.info("Processing movement for playerID: {}", movementPacket.getM_playerID());
 
 		if (players.containsKey(movementPacket.getM_playerID()))
 		{
-			players.get(movementPacket.getM_playerID()).setPos(new Point3D(movementPacket.getM_newX(),
-			                                                               movementPacket.getM_newY(),
-			                                                               movementPacket.getM_newZ()));
-			ActorUpdate actorUpdate = new ActorUpdate(movementPacket.getM_playerID());
-			actorUpdate.insertValue("X", movementPacket.getM_newX());
-			actorUpdate.insertValue("Y", movementPacket.getM_newY());
-			actorUpdate.insertValue("Z", movementPacket.getM_newZ());
-			outgoingPackets.add(actorUpdate);
+			if (attemptMove(movementPacket))
+			{
+				ActorUpdate actorUpdate = new ActorUpdate(movementPacket.getM_playerID());
+				actorUpdate.insertValue("X", movementPacket.getM_newX());
+				actorUpdate.insertValue("Y", movementPacket.getM_newY());
+				actorUpdate.insertValue("Z", movementPacket.getM_newZ());
+				outgoingPackets.add(actorUpdate);
+			}
 		}
 
 	}
@@ -324,7 +357,7 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	public void removePlayer(Integer playerID)
+	public synchronized void removePlayer(Integer playerID)
 	{
 		System.out.println("Removing " + players.get(playerID));
 		players.remove(playerID);
@@ -338,5 +371,86 @@ public class ServerModel implements Runnable
 	{
 		TCPServer.quit();
 		UDPServer.quit();
+	}
+
+	public boolean attemptMove(MovementPacket movementPacket)
+	{
+		Player player = players.get(movementPacket.getM_playerID());
+		Point3D newPosition = new Point3D(movementPacket.getM_newX(),
+		                                  movementPacket.getM_newY(),
+		                                  movementPacket.getM_newZ());
+		//newPosition.translate((int) delta.getX(), (int) delta.getY());
+
+		if (player.isAttacking() && !player.attemptAttackReset())
+			return false;
+
+		// Verify the new Point3D is inside the map
+		if (getDungeon().validPoint(newPosition))
+		{
+			int x = (int) newPosition.getX();
+			int y = (int) newPosition.getY();
+			int z = newPosition.getZ();
+			if (!occupied(newPosition))
+			{
+				if (dungeon.isEmptyFloor(x, y, z))
+				{
+					player.setPos(newPosition);
+					//dungeon.updateVisibleDungeon(me);
+					return true;
+				}
+				else if (dungeon.isStairUp(x, y, z))
+				{
+					player.setPos(newPosition);
+					player.move(new Point3D(0, 0, 1));
+					//dungeon.updateVisibleDungeon(me);
+					return true;
+				}
+				else if (dungeon.isStairDown(x, y, z))
+				{
+					player.setPos(newPosition);
+					player.move(new Point3D(0, 0, -1));
+					//dungeon.updateVisibleDungeon(me);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		return false;
+	}
+
+	public boolean attemptAttack(int playerID, Point3D delta)
+	{
+		Player player = players.get(playerID);
+		Point3D newPosition = player.getPos().clone();
+		newPosition.translate(delta.x, delta.y);
+
+		int x = newPosition.x;
+		int y = newPosition.y;
+		int z = newPosition.getZ();
+
+		if (player.isAttacking() && player.attemptAttackReset())
+			return false;
+
+		if (getDungeon().validPoint(newPosition)
+		    && (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition)))
+		{
+			player.setAttacking(true, delta);
+			return true;
+		}
+
+		return false;
+	}
+
+	private boolean occupied(Point3D point)
+	{
+		for (Actor actor : getActors())
+		{
+			if (actor.getPos().equals(point))
+				return true;
+		}
+		return false;
 	}
 }

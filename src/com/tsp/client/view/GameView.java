@@ -284,6 +284,7 @@ public class GameView implements Listenable
 	public void process(int ch)
 	{
 		boolean moved = false;
+		Point3D moveDelta = null;
 		switch (ch)
 		{
 			default:
@@ -324,22 +325,34 @@ public class GameView implements Listenable
 			case BlackenKeys.KEY_DOWN:
 			case 'j':
 				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.DOWN);
+				{
+					moved = true;
+					moveDelta = Point3D.DOWN;
+				}
 				break;
 			case BlackenKeys.KEY_UP:
 			case 'k':
 				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.UP);
+				{
+					moved = true;
+					moveDelta = Point3D.UP;
+				}
 				break;
 			case BlackenKeys.KEY_LEFT:
 			case 'h':
 				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.LEFT);
+				{
+					moved = true;
+					moveDelta = Point3D.LEFT;
+				}
 				break;
 			case BlackenKeys.KEY_RIGHT:
 			case 'l':
 				if (!model.getQuit())
-					moved = this.model.attemptMove(Point3D.RIGHT);
+				{
+					moved = true;
+					moveDelta = Point3D.RIGHT;
+				}
 				break;
 			case 'a':
 				if (!model.getQuit())
@@ -373,11 +386,13 @@ public class GameView implements Listenable
 		if (moved)
 		{
 			Actor player = model.getMe();
+			Point3D newPos = player.getPos().clone();
+			newPos.add(moveDelta);
 			HashMap<String, Object> movement = new HashMap<String, Object>();
 			movement.put("ID", player.getId());
-			movement.put("X", player.getX());
-			movement.put("Y", player.getY());
-			movement.put("Z", player.getZ());
+			movement.put("X", newPos.getX());
+			movement.put("Y", newPos.getY());
+			movement.put("Z", newPos.getZ());
 			fireEvent(EventType.TURN_MOVE, movement);
 		}
 		if (attacked)

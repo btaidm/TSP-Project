@@ -181,8 +181,8 @@ public class ConnectionController implements GameListener
 	{
 
 		packets.add(new MovementPacket((Integer) e.payload.get("ID"),
-		                               (Integer) e.payload.get("X"),
-		                               (Integer) e.payload.get("Y"),
+		                               ((Double) e.payload.get("X")).intValue(),
+		                               ((Double) e.payload.get("Y")).intValue(),
 		                               (Integer) e.payload.get("Z")));
 	}
 
