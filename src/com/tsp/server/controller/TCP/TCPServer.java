@@ -4,9 +4,9 @@ import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,9 +17,11 @@ import java.net.Socket;
  */
 public class TCPServer extends Thread
 {
-	private static ServerSocket serverSocket = null;
+	//private static ServerSocket serverSocket = null;
+	private static ServerSocketChannel serverSocketChannel = null;
 	// The client socket.
-	private static Socket clientSocket = null;
+	//private static Socket clientSocket = null;
+	private static SocketChannel clientSocketChannel = null;
 
 	// This chat server can accept up to maxClientsCount clients' connections.
 	private static final int maxClientsCount = 8;
@@ -30,7 +32,9 @@ public class TCPServer extends Thread
 	public TCPServer(ServerModel sm) throws IOException
 	{
 		super("TCP Server");
-		serverSocket = new ServerSocket(12000);
+		//serverSocket = new ServerSocket(12000);
+		serverSocketChannel = ServerSocketChannel.open();
+		serverSocketChannel.bind(new InetSocketAddress(12000), 8);
 		serverModel = sm;
 	}
 
@@ -41,22 +45,19 @@ public class TCPServer extends Thread
 		{
 			try
 			{
-				clientSocket = serverSocket.accept();
+				clientSocketChannel = serverSocketChannel.accept();
 				int i = 0;
 				for (i = 0; i < maxClientsCount; i++)
 				{
 					if (threads[i] == null)
 					{
-						(threads[i] = new clientThread(clientSocket, threads, serverModel)).start();
+						(threads[i] = new clientThread(clientSocketChannel, threads, serverModel)).start();
 						break;
 					}
 				}
 				if (i == maxClientsCount)
 				{
-					PrintStream os = new PrintStream(clientSocket.getOutputStream());
-					os.println("Server too busy. Try later.");
-					os.close();
-					clientSocket.close();
+					clientSocketChannel.close();
 				}
 				Thread.sleep(50);
 			}

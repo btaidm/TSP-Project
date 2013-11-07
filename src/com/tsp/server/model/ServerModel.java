@@ -2,9 +2,9 @@ package com.tsp.server.model;
 
 import com.tsp.game.actors.AI;
 import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
-import com.tsp.game.actors.Player;
 import com.tsp.packets.*;
 import com.tsp.server.controller.TCP.TCPServer;
 import com.tsp.server.controller.UDP.UDPServer;
@@ -19,30 +19,24 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created with IntelliJ IDEA.
- * User: Tim
- * Date: 10/17/13
- * Time: 10:45 AM
- * To change this template use File | Settings | File Templates.
+ * Created with IntelliJ IDEA. User: Tim Date: 10/17/13 Time: 10:45 AM To change
+ * this template use File | Settings | File Templates.
  */
 public class ServerModel implements Runnable
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ServerModel.class);
-
-	Dungeon dungeon;
-
-	//Dungeon properties
+	private static final Logger LOGGER = LoggerFactory
+			.getLogger(ServerModel.class);
+	// Dungeon properties
 	private final int ROWS = 24;
 	private final int COLS = 80;
 	private final int FLOORS = 4;
-
-	boolean running = true;
-
-	ConcurrentHashMap<Integer, Player> players;
 	HashMap<Integer, AI> ais;
-	HashMap<Integer, Actor> otherActors;
+	Dungeon dungeon;
 	Queue<Packet> incomingPackets;
+	HashMap<Integer, Actor> otherActors;
 	Queue<Packet> outgoingPackets;
+	ConcurrentHashMap<Integer, Player> players;
+	boolean running = true;
 
 	public ServerModel()
 	{
@@ -54,6 +48,17 @@ public class ServerModel implements Runnable
 		outgoingPackets = new LinkedList<Packet>();
 		generateDungeon();
 		dungeon.revealAll();
+	}
+
+	public void generateDungeon()
+	{
+		LOGGER.info("{}: {}: Model: Generating new dungeon", Thread
+				.currentThread().getName(), Thread.currentThread().getId());
+		dungeon = new Dungeon();
+		LOGGER.info("Dungeon[{}][{}][{}]", dungeon.getDungeon().length,
+		            dungeon.getDungeon()[0].length,
+		            dungeon.getDungeon()[0][0].length);
+
 	}
 
 	public int addPlayer(String playName)
@@ -87,34 +92,27 @@ public class ServerModel implements Runnable
 		return player.getId();
 	}
 
+	public ArrayList<Actor> getActors()
+	{
+		LOGGER.info("Getting Actors");
+		ArrayList<Actor> actors = new ArrayList<Actor>(otherActors.values());
+		actors.addAll(players.values());
+		actors.addAll(ais.values());
+		return actors;
+	}
 
 	public String[][][] getDungeonArray()
 	{
-		LOGGER.info("{}: {}: Model: Getting Dungeon Map Array",
-		            Thread.currentThread().getName(),
-		            Thread.currentThread().getId());
+		LOGGER.info("{}: {}: Model: Getting Dungeon Map Array", Thread
+				.currentThread().getName(), Thread.currentThread().getId());
 		return dungeon.getDungeon();
 	}
 
 	public Dungeon getDungeon()
 	{
-		LOGGER.info("{}: {}: Model: Getting Dungeon Object",
-		            Thread.currentThread().getName(),
-		            Thread.currentThread().getId());
+		LOGGER.info("{}: {}: Model: Getting Dungeon Object", Thread
+				.currentThread().getName(), Thread.currentThread().getId());
 		return dungeon;
-	}
-
-	public void generateDungeon()
-	{
-		LOGGER.info("{}: {}: Model: Generating new dungeon",
-		            Thread.currentThread().getName(),
-		            Thread.currentThread().getId());
-		dungeon = new Dungeon();
-		LOGGER.info("Dungeon[{}][{}][{}]",
-		            dungeon.getDungeon().length,
-		            dungeon.getDungeon()[0].length,
-		            dungeon.getDungeon()[0][0].length);
-
 	}
 
 	public int getColumns()
@@ -134,18 +132,8 @@ public class ServerModel implements Runnable
 
 	public Player getPlayer(Integer playerID)
 	{
-		LOGGER.info("get player id: {}",
-		            playerID);
+		LOGGER.info("get player id: {}", playerID);
 		return players.get(playerID);
-	}
-
-	public ArrayList<Actor> getActors()
-	{
-		LOGGER.info("Getting Actors");
-		ArrayList<Actor> actors = new ArrayList<Actor>(otherActors.values());
-		actors.addAll(players.values());
-		actors.addAll(ais.values());
-		return actors;
 	}
 
 	@Override
@@ -153,12 +141,13 @@ public class ServerModel implements Runnable
 	{
 		while (running)
 		{
-			processPackets();
+			// processPackets();
+			proccessAttacks();
 			processAI();
 			sendPackets();
 			try
 			{
-				Thread.sleep(20);
+				Thread.sleep(5);
 			}
 			catch (InterruptedException e)
 			{
@@ -167,21 +156,111 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void sendPackets()
+	private void proccessAttacks()
 	{
-		//LOGGER.info("{}: {}: Model: Processing Outgoing Packets", Thread.currentThread().getName(),Thread.currentThread().getId());
+		for (Player player : players.values())
+		{
+			if (player.isAttacking())
+			{
+				processAttack(player);
+			}
+		}
+	}
+
+	private synchronized void processAttack(Player player)
+	{
+		attemptAttack(player.getId(),
+		              new Point3D((int) player.getDelta().getX(), (int) player.getDelta().getY()));
+
+
+		//Player attacker = getPlayer(attackPacket.getAttacker());
+		if (player.isAttacking())
+		{
+			ArrayList<Actor> actors = getActors();
+			ActorUpdate attackUpdate = new ActorUpdate(player.getId());
+
+			attackUpdate.insertValue("attacking", true);
+			attackUpdate.insertValue("deltaX", (int) player.getDelta()
+					.getX());
+			attackUpdate.insertValue("deltaY", (int) player.getDelta()
+					.getY());
+			outgoingPackets.add(attackUpdate);
+
+			Point3D attackDest = player.getAttackPos();
+			for (Actor a : actors)
+			{
+				if (a.getId() != player.getId())
+				{
+					if (a.checkHit(attackDest))
+					{
+						player.hit(a);
+						ActorUpdate aUpdate = new ActorUpdate(a.getId());
+						if (a.getHealth() <= 0)
+							aUpdate.insertValue("remove", "remove");
+						else
+							aUpdate.insertValue("health", a.getHealth());
+						outgoingPackets.add(aUpdate);
+					}
+				}
+			}
+		}
+		else if (!player.isAttacking())
+		{
+			ActorUpdate attackUpdate = new ActorUpdate(player.getId());
+			attackUpdate.insertValue("attacking", false);
+			attackUpdate.insertValue("deltaX", (int) 0);
+			attackUpdate.insertValue("deltaY", (int) 0);
+			outgoingPackets.add(attackUpdate);
+		}
+	}
+
+
+	private synchronized void sendPackets()
+	{
+		// LOGGER.info("{}: {}: Model: Processing Outgoing Packets",
+		// Thread.currentThread().getName(),Thread.currentThread().getId());
 		while (!outgoingPackets.isEmpty())
 		{
 			TCPServer.addOutGoingPacket(outgoingPackets.poll());
 		}
 	}
 
-	private void processAI()
+	private synchronized void processAI()
 	{
-		//LOGGER.info("{}: {}: Model: AI turns", Thread.currentThread().getName(),Thread.currentThread().getId());
+		// LOGGER.info("{}: {}: Model: AI turns",
+		// Thread.currentThread().getName(),Thread.currentThread().getId());
 		for (AI ai : ais.values())
 		{
 			ai.turn(dungeon, getActors());
+		}
+	}
+
+	public void processPacket(Packet packet)
+	{
+		switch (packet.getPacketType())
+		{
+			case MOVEMENTPACKET:
+				MovementPacket movementPacket = (MovementPacket) packet;
+				processMovement(movementPacket);
+				System.out.println(packet.toString());
+				break;
+			case ACTOR_PACKET:
+				ActorPacket actorPacket = (ActorPacket) packet;
+				processActor(actorPacket);
+				System.out.println(packet.toString());
+				break;
+			case UPDATE_PACKET:
+				ActorUpdate actorUpdate = (ActorUpdate) packet;
+				processUpdate(actorUpdate);
+				System.out.println(packet.toString());
+				break;
+			case ATTACK_PACKET:
+				AttackPacket attackPacket = (AttackPacket) packet;
+				processAttack(attackPacket);
+				System.out.println(packet.toString());
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -221,48 +300,66 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void processAttack(AttackPacket attackPacket)
+	private synchronized void processAttack(AttackPacket attackPacket)
 	{
-		LOGGER.info("Processing attack from playerID: {}", attackPacket.getAttacker());
-		ArrayList<Actor> actors = getActors();
+		LOGGER.info("Processing attack from playerID: {}",
+		            attackPacket.getAttacker());
 		Player attacker = getPlayer(attackPacket.getAttacker());
-		attacker.setAttacking(true, new Point3D(attackPacket.getDeltaX(), attackPacket.getDeltaY(), 0));
-		ActorUpdate attackUpdate = new ActorUpdate(attacker.getId());
-
-		attackUpdate.insertValue("attacking", true);
-		attackUpdate.insertValue("deltaX", (int) attacker.getDelta().getX());
-		attackUpdate.insertValue("deltaY", (int) attacker.getDelta().getY());
-		outgoingPackets.add(attackUpdate);
-
-		Point3D attackDest = attacker.getAttackPos();
-		for (Actor a : actors)
+		attemptAttack(attackPacket.getAttacker(),
+		              new Point3D(attackPacket.getDeltaX(), attackPacket.getDeltaY()));
 		{
-			if (a.getId() != attackPacket.getAttacker())
+			if (attacker.isAttacking())
 			{
-				if (a.checkHit(attackDest))
+				ArrayList<Actor> actors = getActors();
+				ActorUpdate attackUpdate = new ActorUpdate(attacker.getId());
+
+				attackUpdate.insertValue("attacking", true);
+				attackUpdate.insertValue("deltaX", (int) attacker.getDelta()
+						.getX());
+				attackUpdate.insertValue("deltaY", (int) attacker.getDelta()
+						.getY());
+				outgoingPackets.add(attackUpdate);
+
+				Point3D attackDest = attacker.getAttackPos();
+				for (Actor a : actors)
 				{
-					attacker.hit(a);
-					ActorUpdate aUpdate = new ActorUpdate(a.getId());
-					if (a.getHealth() <= 0) {
-						aUpdate.insertValue("remove", "remove");
-						
-						// Put in an outgoing packet for all the clients telling them
-						// that a player was killed by another player
-						String killshot = attacker.getName() + " k " + a.getName();
-						MessagePacket m = new MessagePacket(killshot);
-						outgoingPackets.add(m);
+					if (a.getId() != attackPacket.getAttacker())
+					{
+						if (a.checkHit(attackDest))
+						{
+							attacker.hit(a);
+							ActorUpdate aUpdate = new ActorUpdate(a.getId());
+							if (a.getHealth() <= 0)
+                            {
+								aUpdate.insertValue("remove", "remove");
+                                // Put in an outgoing packet for all the clients telling them
+                                // that a player was killed by another player
+                                String killshot = attacker.getName() + " k " + a.getName();
+                                MessagePacket m = new MessagePacket(killshot);
+                                outgoingPackets.add(m);
+                            }
+							else
+								aUpdate.insertValue("health", a.getHealth());
+							outgoingPackets.add(aUpdate);
+						}
 					}
-					else
-						aUpdate.insertValue("health", a.getHealth());
-					outgoingPackets.add(aUpdate);
 				}
+			}
+			else if (!attacker.isAttacking())
+			{
+				ActorUpdate attackUpdate = new ActorUpdate(attackPacket.getAttacker());
+				attackUpdate.insertValue("attacking", false);
+				attackUpdate.insertValue("deltaX", (int) 0);
+				attackUpdate.insertValue("deltaY", (int) 0);
+				outgoingPackets.add(attackUpdate);
 			}
 		}
 	}
 
-	private void processUpdate(ActorUpdate actorUpdate)
+	private synchronized void processUpdate(ActorUpdate actorUpdate)
 	{
-		LOGGER.info("Processing update for playerID: {}", actorUpdate.getActorID());
+		LOGGER.info("Processing update for playerID: {}",
+		            actorUpdate.getActorID());
 		if (players.containsKey(actorUpdate.getActorID()))
 		{
 			if (actorUpdate.contains("remove"))
@@ -283,42 +380,53 @@ public class ServerModel implements Runnable
 					actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
 
 				if (actorUpdate.contains("health"))
-					actor.setHealth(((Long) actorUpdate.getValue("health")).intValue());
+					actor.setHealth(((Long) actorUpdate.getValue("health"))
+							                .intValue());
 
 				if (actorUpdate.contains("symbol"))
 					actor.setSymbol((String) actorUpdate.getValue("symbol"));
 
-				if (actorUpdate.contains("attacking") && actorUpdate.contains("deltaX") &&
-				    actorUpdate.contains("deltaY"))
-					((Player) actor)
-							.setAttacking((Boolean) actorUpdate.getValue("attacking"),
-							              new Point3D(((Long) actorUpdate.getValue("deltaX")).intValue(),
-							                          ((Long) actorUpdate.getValue("deltaY")).intValue(),
-							                          0));
+				if (actorUpdate.contains("attacking")
+				    && actorUpdate.contains("deltaX")
+				    && actorUpdate.contains("deltaY"))
+					((Player) actor).setAttacking((Boolean) actorUpdate
+							.getValue("attacking"), new Point3D(
+							((Long) actorUpdate.getValue("deltaX")).intValue(),
+							((Long) actorUpdate.getValue("deltaY")).intValue(),
+							0));
 			}
 			this.outgoingPackets.add(actorUpdate);
 		}
 	}
 
-	private void processActor(ActorPacket actorPacket)
+	private synchronized void processActor(ActorPacket actorPacket)
 	{
 		LOGGER.info("Processing Actor");
 	}
 
-	private void processMovement(MovementPacket movementPacket)
+	private synchronized void processMovement(MovementPacket movementPacket)
 	{
-		LOGGER.info("Processing movement for playerID: {}", movementPacket.getM_playerID());
+		LOGGER.info("Processing movement for playerID: {}",
+		            movementPacket.getM_playerID());
 
 		if (players.containsKey(movementPacket.getM_playerID()))
 		{
-			players.get(movementPacket.getM_playerID()).setPos(new Point3D(movementPacket.getM_newX(),
-			                                                               movementPacket.getM_newY(),
-			                                                               movementPacket.getM_newZ()));
-			ActorUpdate actorUpdate = new ActorUpdate(movementPacket.getM_playerID());
-			actorUpdate.insertValue("X", movementPacket.getM_newX());
-			actorUpdate.insertValue("Y", movementPacket.getM_newY());
-			actorUpdate.insertValue("Z", movementPacket.getM_newZ());
-			outgoingPackets.add(actorUpdate);
+			if (attemptMove(movementPacket))
+			{
+				Player player = players.get(movementPacket.getM_playerID());
+				ActorUpdate attackUpdate = new ActorUpdate(movementPacket.getM_playerID());
+				attackUpdate.insertValue("attacking", false);
+				attackUpdate.insertValue("deltaX", (int) 0);
+				attackUpdate.insertValue("deltaY", (int) 0);
+				outgoingPackets.add(attackUpdate);
+
+				ActorUpdate actorUpdate = new ActorUpdate(
+						movementPacket.getM_playerID());
+				actorUpdate.insertValue("X", player.getX());
+				actorUpdate.insertValue("Y", player.getY());
+				actorUpdate.insertValue("Z", player.getZ());
+				outgoingPackets.add(actorUpdate);
+			}
 		}
 
 	}
@@ -331,7 +439,7 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	public void removePlayer(Integer playerID)
+	public synchronized void removePlayer(Integer playerID)
 	{
 		System.out.println("Removing " + players.get(playerID));
 		players.remove(playerID);
@@ -345,5 +453,84 @@ public class ServerModel implements Runnable
 	{
 		TCPServer.quit();
 		UDPServer.quit();
+	}
+
+	public boolean attemptMove(MovementPacket movementPacket)
+	{
+		Player player = players.get(movementPacket.getM_playerID());
+		Point3D newPosition = player.getPos().clone();
+		newPosition.translate((int) movementPacket.getM_newX(), (int) movementPacket.getM_newY());
+
+		if (player.isAttacking() && !player.attemptAttackReset())
+			return false;
+
+		// Verify the new Point3D is inside the map
+		if (getDungeon().validPoint(newPosition))
+		{
+			int x = (int) newPosition.getX();
+			int y = (int) newPosition.getY();
+			int z = newPosition.getZ();
+			if (!occupied(newPosition))
+			{
+				if (dungeon.isEmptyFloor(x, y, z))
+				{
+					player.setPos(newPosition);
+					// dungeon.updateVisibleDungeon(me);
+					return true;
+				}
+				else if (dungeon.isStairUp(x, y, z))
+				{
+					player.setPos(newPosition);
+					player.move(new Point3D(0, 0, 1));
+					// dungeon.updateVisibleDungeon(me);
+					return true;
+				}
+				else if (dungeon.isStairDown(x, y, z))
+				{
+					player.setPos(newPosition);
+					player.move(new Point3D(0, 0, -1));
+					// dungeon.updateVisibleDungeon(me);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		return false;
+	}
+
+	public boolean attemptAttack(int playerID, Point3D delta)
+	{
+		Player player = players.get(playerID);
+		Point3D newPosition = player.getPos().clone();
+		newPosition.translate(delta.x, delta.y);
+
+		int x = newPosition.x;
+		int y = newPosition.y;
+		int z = newPosition.getZ();
+
+		if (player.isAttacking() && player.attemptAttackReset())
+			return false;
+
+		if (!player.isAttacking() && (getDungeon().validPoint(newPosition)
+		                              && (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition))))
+		{
+			player.setAttacking(true, delta);
+			return true;
+		}
+
+		return false;
+	}
+
+	private boolean occupied(Point3D point)
+	{
+		for (Actor actor : getActors())
+		{
+			if (actor.getPos().equals(point))
+				return true;
+		}
+		return false;
 	}
 }
