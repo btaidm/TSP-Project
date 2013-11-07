@@ -7,6 +7,7 @@ import com.tsp.packets.ActorPacket;
 import com.tsp.packets.Packet;
 import com.tsp.packets.QuitPacket;
 import com.tsp.util.Rolling;
+import com.tsp.util.SocketIO;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -16,8 +17,13 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 
 /**
  * The TCP Client is the main communication between the server and client
@@ -37,9 +43,10 @@ public class TCPClient extends Thread
 	GameModel model;
 	InetAddress addr;
 	int port = 12000;
-	Socket clientSocket;
-	DataInputStream is;
-	DataOutputStream os;
+	SocketChannel clientSocket;
+	//DataInputStream is;
+	//DataOutputStream os;
+    SocketIO socketIO;
 	boolean running = true;
 
 	private final Rolling rolling = new Rolling(100);
@@ -77,7 +84,7 @@ public class TCPClient extends Thread
 				{
 					try
 					{
-						Thread.sleep(10);
+						Thread.sleep(100);
 					}
 					catch (Exception e)
 					{
@@ -93,24 +100,28 @@ public class TCPClient extends Thread
 
 				//Tells the model that every thing is ready
 				model.setReady(true);
-
-				//Sets a timeout for continuous operation
-				clientSocket.setSoTimeout(100);
+				Selector selector = Selector.open();
+				clientSocket.configureBlocking(false);
+				clientSocket.register(selector, SelectionKey.OP_READ);
 				while (running)
 				{
-					synchronized (this)
+					try
 					{
-						//Gets a packet and put it on the queue
-						model.insertPacket(getPacket());
-						try
-						{
-							Thread.sleep(50);
-						}
-						catch (InterruptedException e)
-						{
-
-						}
+						this.wait(10);
+					} catch (Exception e)
+					{
 					}
+					long start = System.currentTimeMillis();
+					selector.select(100);
+					Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+					while (it.hasNext())
+					{
+						SelectionKey selKey = it.next();
+						it.remove();
+						processSelectionKey(selKey);
+					}
+					long end = System.currentTimeMillis();
+					rolling.add(end-start);
 				}
 			}
 		}
@@ -122,6 +133,39 @@ public class TCPClient extends Thread
 		System.out.println("Quiting");
 	}
 	
+	private void processSelectionKey(SelectionKey selKey) throws IOException
+	{
+		// Since the ready operations are cumulative,
+		// need to check readiness for each operation
+		if (selKey.isValid() && selKey.isConnectable())
+		{
+			// Get channel with connection request
+			SocketChannel sChannel = (SocketChannel) selKey.channel();
+
+			boolean success = sChannel.finishConnect();
+			if (!success)
+			{
+				// An error occurred; handle it
+
+				// Unregister the channel with this selector
+				selKey.cancel();
+			}
+		}
+		if (selKey.isValid() && selKey.isReadable())
+		{
+			// Get channel with bytes to read
+			// SocketChannel sChannel = (SocketChannel)selKey.channel();
+			model.insertPacket(getPacket());
+			// See Reading from a SocketChannel
+		}
+		if (selKey.isValid() && selKey.isWritable())
+		{
+			// Get channel that's ready for more bytes
+			// SocketChannel sChannel = (SocketChannel)selKey.channel();
+			// See Writing to a SocketChannel
+		}
+	}
+	
 	/**
 	 * Receives the player from the server
 	 *
@@ -130,7 +174,7 @@ public class TCPClient extends Thread
 	 */
 	private Player getPlayer() throws IOException
 	{
-		String json = is.readUTF();
+		String json = socketIO.ReadString();
 		Object object = JSONValue.parse(json);
 		if (object != null && object instanceof JSONObject)
 		{
@@ -185,9 +229,9 @@ public class TCPClient extends Thread
 	 */
 	public void connect() throws IOException
 	{
-		clientSocket = new Socket(addr, port);
-		is = new DataInputStream(clientSocket.getInputStream());
-		os = new DataOutputStream(clientSocket.getOutputStream());
+		clientSocket = SocketChannel.open();
+        clientSocket.connect(new InetSocketAddress(addr, port));
+		socketIO = new SocketIO(clientSocket);
 	}
 
 	/**
@@ -197,7 +241,7 @@ public class TCPClient extends Thread
 	 */
 	public void sendName(String name) throws IOException
 	{
-		os.writeUTF(name);
+		socketIO.WriteString(name);
 	}
 
 	/**
@@ -207,7 +251,7 @@ public class TCPClient extends Thread
 	 */
 	public int getID() throws IOException
 	{
-		return is.readInt();
+		return socketIO.ReadInt();
 	}
 
 	/**
@@ -217,14 +261,14 @@ public class TCPClient extends Thread
 	 */
 	public String[][][] getDungeon() throws IOException
 	{
-		int Columns = is.readInt();
-		int Rows = is.readInt();
-		int Floors = is.readInt();
+		int Columns = socketIO.ReadInt();
+		int Rows = socketIO.ReadInt();
+		int Floors = socketIO.ReadInt();
 		String[][][] dungeon = new String[Floors][Columns][Rows];
 		for (int z = 0; z < Floors; z++)
 			for (int x = 0; x < Columns; x++)
 				for (int y = 0; y < Rows; y++)
-					dungeon[z][x][y] = is.readUTF();
+					dungeon[z][x][y] = socketIO.ReadString();
 		return dungeon;
 	}
 
@@ -236,16 +280,16 @@ public class TCPClient extends Thread
 	{
 		try
 		{
-			long start = System.currentTimeMillis();
+			
 
-			String json = is.readUTF();
+			String json = socketIO.ReadString();
 
-			long end = System.currentTimeMillis();
+			
 
 			Object object = JSONValue.parse(json);
 			if (object != null && object instanceof JSONObject)
 			{
-				rolling.add(end-start);
+				
 				LOGGER.debug("Average Retrieve time: {}", rolling.getAverage());
 				Packet packet = Packet.parseJSONObject((JSONObject) object);
 				return packet;
@@ -264,14 +308,10 @@ public class TCPClient extends Thread
 	 */
 	public void sendQuit() throws IOException
 	{
-		if (os != null)
+		if (socketIO != null)
 		{
-			os.writeUTF(new QuitPacket().toJSONString());
-			os.close();
+			socketIO.WriteString(new QuitPacket().toJSONString());
 		}
-
-		if (is != null)
-			is.close();
 
 		if (clientSocket != null)
 			clientSocket.close();

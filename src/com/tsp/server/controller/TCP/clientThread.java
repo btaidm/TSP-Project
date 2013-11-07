@@ -1,38 +1,37 @@
 package com.tsp.server.controller.TCP;
 
-import com.tsp.game.actors.Actor;
-import com.tsp.packets.ActorPacket;
-import com.tsp.packets.Packet;
-import com.tsp.server.model.ServerModel;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
+import com.tsp.game.actors.Actor;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.Packet;
+import com.tsp.server.model.ServerModel;
+import com.tsp.util.SocketIO;
 
 /**
- * Created with IntelliJ IDEA.
- * User: Tim
- * Date: 10/19/13
- * Time: 1:37 PM
- * To change this template use File | Settings | File Templates.
+ * Created with IntelliJ IDEA. User: Tim Date: 10/19/13 Time: 1:37 PM To change
+ * this template use File | Settings | File Templates.
  */
 class clientThread extends Thread
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(clientThread.class);
+	private static final Logger LOGGER = LoggerFactory
+			.getLogger(clientThread.class);
 
 	private String clientName = null;
-	private DataInputStream is = null;
-	private DataOutputStream os = null;
+	// private DataInputStream is = null;
+	// private DataOutputStream os = null;
 	private SocketChannel clientSocket = null;
 	private final clientThread[] threads;
 	private int maxClientsCount;
@@ -41,21 +40,7 @@ class clientThread extends Thread
 	Queue<Packet> outGoingPackets;
 	private boolean running = true;
 	boolean viewer = false;
-
-
-	private String BytesToString(byte[] bytes) throws IOException
-	{
-		InputStreamReader input = new InputStreamReader(
-				new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
-
-		StringBuilder str = new StringBuilder();
-
-		for (int value; (value = input.read()) != -1; )
-			str.append((char) value);
-
-
-		return str.toString();
-	}
+	private SocketIO socketIO;
 
 	public void addOutGoingPacket(Packet packet)
 	{
@@ -65,13 +50,15 @@ class clientThread extends Thread
 		}
 	}
 
-	public clientThread(SocketChannel clientSocket, clientThread[] threads, ServerModel sm)
+	public clientThread(SocketChannel clientSocket, clientThread[] threads,
+			ServerModel sm)
 	{
 		this.outGoingPackets = new LinkedList<Packet>();
 		this.clientSocket = clientSocket;
 		this.threads = threads;
 		maxClientsCount = threads.length;
 		serverModel = sm;
+		socketIO = new SocketIO(clientSocket);
 	}
 
 	public void run()
@@ -81,87 +68,119 @@ class clientThread extends Thread
 		try
 		{
 
-		   /*
-		    * Create input and output streams for this client.
-	        */
+			/*
+			 * Create input and output streams for this client.
+			 */
 
 			sendDungeon(serverModel.getDungeonArray());
 
-			int count = is.available();
-			while (count <= 0)
-			{
-				count = is.available();
-			}
-			byte[] name = new byte[count];
+			String name = socketIO.ReadString().trim();
 
-			is.read(name);
-
-			viewer = BytesToString(name).trim().equals("TSPVIEWER");
+			viewer = name.equals("TSPVIEWER");
 			if (!viewer)
 			{
-				String PlayName = BytesToString(name).trim();
+				String PlayName = name;
 				synchronized (this)
 				{
 					clientName = PlayName;
 					playerID = serverModel.addPlayer(PlayName);
-					os.writeInt(playerID);
+					socketIO.WriteInt(playerID);
 
 					sendPlayer();
 					sendNewPlayer();
 				}
 
-			}
-			else
+			} else
 			{
-				os.writeInt(-1);
+				socketIO.WriteInt(-1);
 			}
 			sendActors();
 
-			clientSocket.socket().setSoTimeout(100);
+			Selector selector = Selector.open();
+			clientSocket.configureBlocking(false);
+			clientSocket.register(selector, clientSocket.validOps());
+			// clientSocket.socket().setSoTimeout(100);
 			/* Start the conversation. */
 			while (running)
 			{
 				try
 				{
 					this.wait(10);
-				}
-				catch (Exception e)
+				} catch (Exception e)
 				{
 				}
-				processIncoming();
-				processPackets();
+				selector.select(100);
+				Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+				while (it.hasNext())
+				{
+					SelectionKey selKey = it.next();
+					it.remove();
+					processSelectionKey(selKey);
+				}
+
 			}
 
-		}
-		catch (IOException e)
+		} catch (IOException e)
 		{
 			e.printStackTrace();
 
-		}
-		finally
+		} finally
 		{
 			try
 			{
 				quit();
-			}
-			catch (IOException e)
+			} catch (IOException e)
 			{
 				e.printStackTrace();
 			}
 		}
 	}
 
+	private void processSelectionKey(SelectionKey selKey) throws IOException
+	{
+		// Since the ready operations are cumulative,
+		// need to check readiness for each operation
+		if (selKey.isValid() && selKey.isConnectable())
+		{
+			// Get channel with connection request
+			SocketChannel sChannel = (SocketChannel) selKey.channel();
+
+			boolean success = sChannel.finishConnect();
+			if (!success)
+			{
+				// An error occurred; handle it
+
+				// Unregister the channel with this selector
+				selKey.cancel();
+			}
+		}
+		if (selKey.isValid() && selKey.isReadable())
+		{
+			// Get channel with bytes to read
+			// SocketChannel sChannel = (SocketChannel)selKey.channel();
+			processIncoming();
+			// See Reading from a SocketChannel
+		}
+		if (selKey.isValid() && selKey.isWritable())
+		{
+			// Get channel that's ready for more bytes
+			// SocketChannel sChannel = (SocketChannel)selKey.channel();
+			processPackets();
+			// See Writing to a SocketChannel
+		}
+	}
+
 	private void sendPlayer() throws IOException
 	{
 		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
-		writeString(player.toJSONString());
+		socketIO.WriteString(player.toJSONString());
 	}
 
 	private void processIncoming()
 	{
 		try
 		{
-			String json = readString();
+			String json = socketIO.ReadString();
 			Object object = JSONValue.parse(json);
 			if (object != null && object instanceof JSONObject)
 			{
@@ -169,29 +188,9 @@ class clientThread extends Thread
 				if (packet.getPacketType() == Packet.PacketType.QUIT_PACKET)
 					running = false;
 			}
-		}
-		catch (IOException e)
+		} catch (IOException e)
 		{
 		}
-	}
-
-	private String readString() throws IOException
-	{
-		ByteBuffer bytes = ByteBuffer.allocate(4);
-		int bytesRead = clientSocket.read(bytes);
-		if(bytesRead != 4)
-			throw new IOException("Could not read in bytes for String Length");
-		int size = bytes.getInt();
-		ByteBuffer stringBuff = ByteBuffer.allocate(size);
-		int totalBytesRead = 0;
-		while(totalBytesRead < size)
-		{
-			totalBytesRead+=clientSocket.read(stringBuff);
-		}
-		CharBuffer decodedString = Charset.forName("UTF-8").decode(stringBuff);
-		String ret = decodedString.toString();
-		LOGGER.trace("{}",ret);
-		return ret;
 	}
 
 	private void processPackets() throws IOException
@@ -202,9 +201,10 @@ class clientThread extends Thread
 			{
 				Packet packet = outGoingPackets.poll();
 				long start = System.currentTimeMillis();
-				writeString(packet.toJSONString());
+				socketIO.WriteString(packet.toJSONString());
 				long end = System.currentTimeMillis();
-				LOGGER.debug("Sent Packet: {}: {} ms", packet.toString(), end - start);
+				LOGGER.debug("Sent Packet: {}: {} ms", packet.toString(), end
+						- start);
 			}
 		}
 	}
@@ -212,9 +212,9 @@ class clientThread extends Thread
 	public void quit() throws IOException
 	{
 		/*
-	   * Clean up. Set the current thread variable to null so that a new client
-       * could be accepted by the server.
-       */
+		 * Clean up. Set the current thread variable to null so that a new
+		 * client could be accepted by the server.
+		 */
 		synchronized (this)
 		{
 			for (int i = 0; i < maxClientsCount; i++)
@@ -224,27 +224,28 @@ class clientThread extends Thread
 					threads[i] = null;
 				}
 			}
-	  /*
-	   * Close the output stream, close the input stream, close the socket.
-       */
+			/*
+			 * Close the output stream, close the input stream, close the
+			 * socket.
+			 */
 			if (!viewer)
 				serverModel.removePlayer(playerID);
-			//is.close();
-			//os.close();
+			// is.close();
+			// os.close();
 			clientSocket.close();
 		}
 	}
 
 	private void sendDungeon(String[][][] strings) throws IOException
 	{
-		os.writeInt(serverModel.getColumns());
-		os.writeInt(serverModel.getRows());
-		os.writeInt(serverModel.getFloors());
+		socketIO.WriteInt(serverModel.getColumns());
+		socketIO.WriteInt(serverModel.getRows());
+		socketIO.WriteInt(serverModel.getFloors());
 		for (int z = 0; z < serverModel.getFloors(); z++)
 			for (int x = 0; x < serverModel.getColumns(); x++)
 				for (int y = 0; y < serverModel.getRows(); y++)
 				{
-					writeString(strings[z][x][y]);
+					socketIO.WriteString(strings[z][x][y]);
 				}
 	}
 
@@ -254,7 +255,7 @@ class clientThread extends Thread
 		ArrayList<Actor> actors = serverModel.getActors();
 		for (Actor actor : actors)
 		{
-			writeString(new ActorPacket(actor).toJSONString());
+			socketIO.WriteString(new ActorPacket(actor).toJSONString());
 		}
 
 	}
@@ -265,15 +266,4 @@ class clientThread extends Thread
 		TCPServer.addOutGoingPacket(player);
 	}
 
-	protected void writeString(String string) throws IOException
-	{
-		byte[] stringBytes = string.getBytes(Charset.forName("UTF-8"));
-		Integer size = stringBytes.length;
-		ByteBuffer buf = ByteBuffer.allocate(4 + size);
-		buf.putInt(size).put(stringBytes);
-		clientSocket.write(buf);
-	}
-
-	protected void writ
 }
-
