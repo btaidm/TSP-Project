@@ -1,13 +1,5 @@
 package com.tsp.client.view;
 
-import java.awt.Point;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.googlecode.blacken.colors.ColorNames;
 import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
@@ -27,6 +19,13 @@ import com.tsp.packets.ActorPacket;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.awt.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GameView implements Listenable
 {
@@ -45,9 +44,8 @@ public class GameView implements Listenable
 	GameModel model;
 	boolean quit = false;
 	ArrayList<GameListener> listeners;
-	boolean attacked = false;
+	
 	private TCPClient tcpClient;
-	private Point attackDelta;
 	private boolean esc = false;
 	private boolean restart = true;
 	private boolean playing = true;
@@ -117,7 +115,8 @@ public class GameView implements Listenable
 		while (!quit && !model.getQuit())
 		{
 			processPackets();
-			ch = this.curses.getch(50);
+			long start = System.currentTimeMillis();
+			ch = this.curses.getch(10);
 			process(ch);
 			refresh();
 
@@ -298,101 +297,98 @@ public class GameView implements Listenable
 
 	public void process(int ch)
 	{
+		boolean attacked = false;
+		Point attackDelta = null;
 		boolean moved = false;
+		Point3D moveDelta = null;
 		switch (ch)
 		{
-		default:
-		case BlackenKeys.NO_KEY:
-		{
-			if (!model.getQuit())
-				if (attacked && model.getMe().isAttacking())
-				{
-					if (model.getMe().attemptAttackReset())
-					{
-						attackDelta = null;
-						attacked = false;
-
-						Actor player = model.getMe();
-						HashMap<String, Object> attack = new HashMap<String, Object>();
-						attack.put("ID", player.getId());
-						attack.put("attacking", false);
-						attack.put("deltaX", 0);
-						attack.put("deltaY", 0);
-
-						fireEvent(EventType.TURN_UPDATE, attack);
-					}
-				}
-			break;
-		}
-		case BlackenKeys.KEY_ESCAPE:
-			quit = true;
-			esc = true;
-			break;
-		case 'r':
-			if (!playing)
+			default:
+			case BlackenKeys.NO_KEY:
 			{
-				quit = true;
-				restart = true;
-				fadeCount = 0;
+
+				break;
 			}
-			break;
-		case BlackenKeys.KEY_DOWN:
-		case 'j':
-			if (!model.getQuit())
-				moved = this.model.attemptMove(Point3D.DOWN);
-			break;
-		case BlackenKeys.KEY_UP:
-		case 'k':
-			if (!model.getQuit())
-				moved = this.model.attemptMove(Point3D.UP);
-			break;
-		case BlackenKeys.KEY_LEFT:
-		case 'h':
-			if (!model.getQuit())
-				moved = this.model.attemptMove(Point3D.LEFT);
-			break;
-		case BlackenKeys.KEY_RIGHT:
-		case 'l':
-			if (!model.getQuit())
-				moved = this.model.attemptMove(Point3D.RIGHT);
-			break;
-		case 'a':
-			if (!model.getQuit())
-				if (attacked = this.model.attemptAttack(Point3D.LEFT))
+			case BlackenKeys.KEY_ESCAPE:
+				quit = true;
+				esc = true;
+				break;
+			case 'r':
+				if (!playing)
 				{
-					attackDelta = Point3D.LEFT;
+					quit = true;
+					restart = true;
+					fadeCount = 0;
 				}
-			break;
-		case 'd':
-			if (!model.getQuit())
-				if (attacked = this.model.attemptAttack(Point3D.RIGHT))
+				break;
+			case BlackenKeys.KEY_DOWN:
+			case 'j':
+				if (!model.getQuit())
 				{
-					attackDelta = Point3D.RIGHT;
+					moved = true;
+					moveDelta = Point3D.DOWN;
 				}
-			break;
-		case 's':
-			if (!model.getQuit())
-				if (attacked = this.model.attemptAttack(Point3D.DOWN))
+				break;
+			case BlackenKeys.KEY_UP:
+			case 'k':
+				if (!model.getQuit())
 				{
-					attackDelta = Point3D.DOWN;
+					moved = true;
+					moveDelta = Point3D.UP;
 				}
-			break;
-		case 'w':
-			if (!model.getQuit())
-				if (attacked = this.model.attemptAttack(Point3D.UP))
+				break;
+			case BlackenKeys.KEY_LEFT:
+			case 'h':
+				if (!model.getQuit())
 				{
-					attackDelta = Point3D.UP;
+					moved = true;
+					moveDelta = Point3D.LEFT;
 				}
-			break;
+				break;
+			case BlackenKeys.KEY_RIGHT:
+			case 'l':
+				if (!model.getQuit())
+				{
+					moved = true;
+					moveDelta = Point3D.RIGHT;
+				}
+				break;
+			case 'a':
+				if (!model.getQuit())
+					if (attacked = this.model.attemptAttack(Point3D.LEFT))
+					{
+						attackDelta = Point3D.LEFT;
+					}
+				break;
+			case 'd':
+				if (!model.getQuit())
+					if (attacked = this.model.attemptAttack(Point3D.RIGHT))
+					{
+						attackDelta = Point3D.RIGHT;
+					}
+				break;
+			case 's':
+				if (!model.getQuit())
+					if (attacked = this.model.attemptAttack(Point3D.DOWN))
+					{
+						attackDelta = Point3D.DOWN;
+					}
+				break;
+			case 'w':
+				if (!model.getQuit())
+					if (attacked = this.model.attemptAttack(Point3D.UP))
+					{
+						attackDelta = Point3D.UP;
+					}
+				break;
 		}
-		if (moved)
+		if (moved && model.attemptMove(moveDelta))
 		{
-			Actor player = model.getMe();
 			HashMap<String, Object> movement = new HashMap<String, Object>();
-			movement.put("ID", player.getId());
-			movement.put("X", player.getX());
-			movement.put("Y", player.getY());
-			movement.put("Z", player.getZ());
+			movement.put("ID", model.getMe().getId());
+			movement.put("X", moveDelta.getX());
+			movement.put("Y", moveDelta.getY());
+			movement.put("Z", moveDelta.getZ());
 			fireEvent(EventType.TURN_MOVE, movement);
 		}
 		if (attacked)

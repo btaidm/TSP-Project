@@ -60,7 +60,7 @@ public class GameModel
 		if (me == null)
 		{
 			me = new Player(this.playerName, getDungeon().getRows(),
-			                getDungeon().getColumns(), getDungeon().getFloors());
+					getDungeon().getColumns(), getDungeon().getFloors());
 		}
 		return me;
 	}
@@ -72,8 +72,7 @@ public class GameModel
 		if (me.getPos().equals(point))
 		{
 			return me.getSymbol();
-		}
-		else if (me.isAttacking() && me.getAttackPos().equals(point))
+		} else if (me.isAttacking() && me.getAttackPos().equals(point))
 		{
 			return me.getAttackSymbol();
 		}
@@ -88,7 +87,7 @@ public class GameModel
 				if (a instanceof Player)
 				{
 					if (((Player) a).isAttacking()
-					    && ((Player) a).getAttackPos().equals(point))
+							&& ((Player) a).getAttackPos().equals(point))
 					{
 						return ((Player) a).getAttackSymbol();
 					}
@@ -101,9 +100,9 @@ public class GameModel
 	public int getColor(int x, int y, int z)
 	{
 		if (me.getPos().equals(new Point3D(x, y, z))
-		    || (attackLocation != null && x == attackLocation.getX()
-		        && y == attackLocation.getY() && z == attackLocation
-				.getZ()))
+				|| (attackLocation != null && x == attackLocation.getX()
+						&& y == attackLocation.getY() && z == attackLocation
+						.getZ()))
 		{
 			return me.getColor();
 		}
@@ -117,7 +116,6 @@ public class GameModel
 				return a.getColor();
 			}
 		}
-
 
 		if (dungeon.isStairUp(x, y, z) || dungeon.isStairDown(x, y, z))
 			return (int) (255.0 / 2);
@@ -201,7 +199,7 @@ public class GameModel
 	public void update(ActorUpdate actorUpdate)
 	{
 		if (otherActors.containsKey(actorUpdate.getActorID())
-		    || getMe().getId() == actorUpdate.getActorID())
+				|| getMe().getId() == actorUpdate.getActorID())
 		{
 			if (actorUpdate.contains("remove"))
 			{
@@ -209,43 +207,62 @@ public class GameModel
 				{
 					me.setHealth(0);
 					setQuit(true);
-				}
-				else
+				} else
 					otherActors.remove(actorUpdate.getActorID());
-			}
-			else
+			} else
 			{
+				boolean meMoved = false;
 				Actor actor = (getMe().getId() == actorUpdate.getActorID() ? getMe()
 						: otherActors.get(actorUpdate.getActorID()));
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("X"))
+				if (actorUpdate.contains("X"))
+				{
 					actor.setX(((Long) actorUpdate.getValue("X")).intValue());
+					if (actor.getId() == me.getId())
+					{
+						meMoved = true;
+					}
+				}
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("Y"))
+				if (actorUpdate.contains("Y"))
+				{
 					actor.setY(((Long) actorUpdate.getValue("Y")).intValue());
+					if (actor.getId() == me.getId())
+					{
+						meMoved = true;
+					}
+				}
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("Z"))
+				if (actorUpdate.contains("Z"))
+				{
 					actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
+					if (actor.getId() == me.getId())
+					{
+						meMoved = true;
+					}
+				}
 
 				if (actorUpdate.contains("health"))
 					actor.setHealth(((Long) actorUpdate.getValue("health"))
-							                .intValue());
+							.intValue());
 
 				if (actorUpdate.contains("symbol"))
 					actor.setSymbol((String) actorUpdate.getValue("symbol"));
 
-				if (getMe().getId() != actorUpdate.getActorID()
-				    && actorUpdate.contains("attacking")
-				    && actorUpdate.contains("deltaX")
-				    && actorUpdate.contains("deltaY"))
+				if (actorUpdate.contains("attacking")
+						&& actorUpdate.contains("deltaX")
+						&& actorUpdate.contains("deltaY"))
+				{
 					((Player) actor).setAttacking((Boolean) actorUpdate
 							.getValue("attacking"), new Point3D(
 							((Long) actorUpdate.getValue("deltaX")).intValue(),
 							((Long) actorUpdate.getValue("deltaY")).intValue(),
 							0));
+				}
+				if (meMoved)
+				{
+					dungeon.updateVisibleDungeon(me);
+				}
 			}
 		}
 	}
@@ -253,7 +270,7 @@ public class GameModel
 	public void addActor(Actor actor)
 	{
 		if (actor.getId() != me.getId()
-		    && !otherActors.containsKey(actor.getId()))
+				&& !otherActors.containsKey(actor.getId()))
 			otherActors.put(actor.getId(), actor);
 	}
 
@@ -272,8 +289,8 @@ public class GameModel
 	{
 		Point3D newPosition = me.getPos().clone();
 		newPosition.translate((int) delta.getX(), (int) delta.getY());
-		
-		if (getMe().isAttacking() && !getMe().attemptAttackReset())
+
+		if (getMe().isAttacking())
 			return false;
 
 		// Verify the new Point3D is inside the map
@@ -286,25 +303,14 @@ public class GameModel
 			{
 				if (dungeon.isEmptyFloor(x, y, z))
 				{
-					me.setPos(newPosition);
-					dungeon.updateVisibleDungeon(me);
 					return true;
-				}
-				else if (dungeon.isStairUp(x, y, z))
+				} else if (dungeon.isStairUp(x, y, z))
 				{
-					me.setPos(newPosition);
-					me.move(new Point3D(0, 0, 1));
-					dungeon.updateVisibleDungeon(me);
 					return true;
-				}
-				else if (dungeon.isStairDown(x, y, z))
+				} else if (dungeon.isStairDown(x, y, z))
 				{
-					me.setPos(newPosition);
-					me.move(new Point3D(0, 0, -1));
-					dungeon.updateVisibleDungeon(me);
 					return true;
-				}
-				else
+				} else
 				{
 					return false;
 				}
@@ -326,7 +332,7 @@ public class GameModel
 			return false;
 
 		if (getDungeon().validPoint(newPosition)
-		    && (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition)))
+				&& (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition)))
 		{
 			me.setAttacking(true, delta);
 			return true;
