@@ -40,28 +40,62 @@ public class TCPClient extends Thread
 	 *
 	 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(TCPClient.class);
-	GameModel model;
+	private final Rolling rolling = new Rolling(100);
 	InetAddress addr;
-	int port = 12000;
 	SocketChannel clientSocket;
+	GameModel model;
+	int port = 12000;
+	boolean running = true;
 	//DataInputStream is;
 	//DataOutputStream os;
     SocketIO socketIO;
-	boolean running = true;
 
-	private final Rolling rolling = new Rolling(100);
+	public TCPClient(GameModel model) throws UnknownHostException
+	{
+		this.model = model;
+		addr = InetAddress.getLocalHost();
+	}
 
+	/**
+	 * Creates a TCPClient with address set to given address and given port
+	 *
+	 * @param model   the {@link GameModel} that contains the game data
+	 * @param address the address of the server
+	 * @param port    the port of the server
+	 */
+	public TCPClient(GameModel model, InetAddress address, int port)
+	{
+		this.model = model;
+		addr = address;
+		this.port = port;
+	}
+
+
+
+	/**
+	 * Creates a TCPClient with address set to given address and given port
+	 *
+	 * @param model the {@link GameModel} that contains the game data
+	 * @param host  the hostname of the server
+	 * @param port  the port of the server
+	 * @throws UnknownHostException when the host name is unknown
+	 */
+	public TCPClient(GameModel model, String host, int port) throws UnknownHostException
+	{
+		this.model = model;
+		addr = InetAddress.getByName(host);
+		this.port = port;
+	}
+	
 	public int getPort()
 	{
 		return port;
 	}
-
+	
 	public InetAddress getAddr()
 	{
 		return addr;
 	}
-
-
 
 	/**
 	 * {@inheritDoc}
@@ -132,7 +166,78 @@ public class TCPClient extends Thread
 		}
 		System.out.println("Quiting");
 	}
-	
+
+	/**
+	 * Gets the dungeon map from the server
+	 * @return an array containing the dungeon
+	 * @throws IOException when the {@link DataInputStream} errors
+	 */
+	public String[][][] getDungeon() throws IOException
+	{
+		int Columns = socketIO.ReadInt();
+		int Rows = socketIO.ReadInt();
+		int Floors = socketIO.ReadInt();
+		String[][][] dungeon = new String[Floors][Columns][Rows];
+		for (int z = 0; z < Floors; z++)
+			for (int x = 0; x < Columns; x++)
+				for (int y = 0; y < Rows; y++)
+					dungeon[z][x][y] = socketIO.ReadString();
+		return dungeon;
+	}
+
+	/**
+	 * Gets the ID of the player
+	 * @return the ID of the player
+	 * @throws IOException when the {@link DataInputStream} errors
+	 */
+	public int getID() throws IOException
+	{
+		return socketIO.ReadInt();
+	}
+
+	/**
+	 * Sends the name of the client/player
+	 * @param name The name of the client/player. I.E {@value "Tim"}
+	 * @throws IOException when the {@link DataOutputStream} errors
+	 */
+	public void sendName(String name) throws IOException
+	{
+		socketIO.WriteString(name);
+	}
+
+	/**
+	 * Connects to the server
+	 * @throws IOException on Socket Error, and data stream errors
+	 */
+	public void connect() throws IOException
+	{
+		clientSocket = SocketChannel.open();
+        clientSocket.connect(new InetSocketAddress(addr, port));
+		socketIO = new SocketIO(clientSocket);
+	}
+
+	/**
+	 * Receives the player from the server
+	 *
+	 * @return the {@link Actor} that contains the player information
+	 * @throws IOException when the socket has an error
+	 */
+	private Player getPlayer() throws IOException
+	{
+		String json = socketIO.ReadString();
+		Object object = JSONValue.parse(json);
+		if (object != null && object instanceof JSONObject)
+		{
+			Packet packet = Packet.parseJSONObject((JSONObject) object);
+			if (packet.getPacketType() == Packet.PacketType.ACTOR_PACKET)
+				if (((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
+				{
+					return (Player)(((ActorPacket) packet).getActor());
+				}
+		}
+		return null;
+	}
+
 	private void processSelectionKey(SelectionKey selKey) throws IOException
 	{
 		// Since the ready operations are cumulative,
@@ -164,112 +269,6 @@ public class TCPClient extends Thread
 			// SocketChannel sChannel = (SocketChannel)selKey.channel();
 			// See Writing to a SocketChannel
 		}
-	}
-	
-	/**
-	 * Receives the player from the server
-	 *
-	 * @return the {@link Actor} that contains the player information
-	 * @throws IOException when the socket has an error
-	 */
-	private Player getPlayer() throws IOException
-	{
-		String json = socketIO.ReadString();
-		Object object = JSONValue.parse(json);
-		if (object != null && object instanceof JSONObject)
-		{
-			Packet packet = Packet.parseJSONObject((JSONObject) object);
-			if (packet.getPacketType() == Packet.PacketType.ACTOR_PACKET)
-				if (((ActorPacket) packet).getActor().getType() == Actor.ActorType.ACTOR_PLAYER)
-				{
-					return (Player)(((ActorPacket) packet).getActor());
-				}
-		}
-		return null;
-	}
-
-	public TCPClient(GameModel model) throws UnknownHostException
-	{
-		this.model = model;
-		addr = InetAddress.getLocalHost();
-	}
-
-	/**
-	 * Creates a TCPClient with address set to given address and given port
-	 *
-	 * @param model   the {@link GameModel} that contains the game data
-	 * @param address the address of the server
-	 * @param port    the port of the server
-	 */
-	public TCPClient(GameModel model, InetAddress address, int port)
-	{
-		this.model = model;
-		addr = address;
-		this.port = port;
-	}
-
-	/**
-	 * Creates a TCPClient with address set to given address and given port
-	 *
-	 * @param model the {@link GameModel} that contains the game data
-	 * @param host  the hostname of the server
-	 * @param port  the port of the server
-	 * @throws UnknownHostException when the host name is unknown
-	 */
-	public TCPClient(GameModel model, String host, int port) throws UnknownHostException
-	{
-		this.model = model;
-		addr = InetAddress.getByName(host);
-		this.port = port;
-	}
-
-	/**
-	 * Connects to the server
-	 * @throws IOException on Socket Error, and data stream errors
-	 */
-	public void connect() throws IOException
-	{
-		clientSocket = SocketChannel.open();
-        clientSocket.connect(new InetSocketAddress(addr, port));
-		socketIO = new SocketIO(clientSocket);
-	}
-
-	/**
-	 * Sends the name of the client/player
-	 * @param name The name of the client/player. I.E {@value "Tim"}
-	 * @throws IOException when the {@link DataOutputStream} errors
-	 */
-	public void sendName(String name) throws IOException
-	{
-		socketIO.WriteString(name);
-	}
-
-	/**
-	 * Gets the ID of the player
-	 * @return the ID of the player
-	 * @throws IOException when the {@link DataInputStream} errors
-	 */
-	public int getID() throws IOException
-	{
-		return socketIO.ReadInt();
-	}
-
-	/**
-	 * Gets the dungeon map from the server
-	 * @return an array containing the dungeon
-	 * @throws IOException when the {@link DataInputStream} errors
-	 */
-	public String[][][] getDungeon() throws IOException
-	{
-		int Columns = socketIO.ReadInt();
-		int Rows = socketIO.ReadInt();
-		int Floors = socketIO.ReadInt();
-		String[][][] dungeon = new String[Floors][Columns][Rows];
-		for (int z = 0; z < Floors; z++)
-			for (int x = 0; x < Columns; x++)
-				for (int y = 0; y < Rows; y++)
-					dungeon[z][x][y] = socketIO.ReadString();
-		return dungeon;
 	}
 
 	/**
@@ -303,6 +302,16 @@ public class TCPClient extends Thread
 	}
 
 	/**
+	 * Stops the TCP Thread and then sends the quit packet
+	 * @throws IOException
+	 */
+	public void quit() throws IOException
+	{
+		running = false;
+		sendQuit();
+	}
+
+	/**
 	 * Sends a quit packet to the server showing the leaving of a player
 	 * @throws IOException
 	 */
@@ -315,16 +324,6 @@ public class TCPClient extends Thread
 
 		if (clientSocket != null)
 			clientSocket.close();
-	}
-
-	/**
-	 * Stops the TCP Thread and then sends the quit packet
-	 * @throws IOException
-	 */
-	public void quit() throws IOException
-	{
-		running = false;
-		sendQuit();
 	}
 
 	/**

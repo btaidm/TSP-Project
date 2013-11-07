@@ -292,15 +292,7 @@ public class GameView implements Listenable
 			default:
 			case BlackenKeys.NO_KEY:
 			{
-				if(model.getMe().isAttacking())
-				{
-					Player player = model.getMe();
-					HashMap<String, Object> attack = new HashMap<String, Object>();
-					attack.put("ID", player.getId());
-					attack.put("X", (int) player.getDelta().getX());
-					attack.put("Y", (int) player.getDelta().getY());
-					fireEvent(EventType.TURN_ATTACK, attack);
-				}
+
 				break;
 			}
 			case BlackenKeys.KEY_ESCAPE:
