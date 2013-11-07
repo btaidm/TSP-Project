@@ -6,6 +6,7 @@ public class Rolling {
     private double total = 0d;
     private int index = 0;
     private double samples[];
+	private int count = 1;
 
     public Rolling(int size) {
         this.size = size;
@@ -18,9 +19,10 @@ public class Rolling {
         samples[index] = x;
         total += x;
         if (++index == size) index = 0; // cheaper than modulus
+	    if(count < size) count++;
     }
 
     public double getAverage() {
-        return total / size;
+        return total / count;
     }   
 }

@@ -32,7 +32,7 @@ public final class Player extends Actor
 		health = 10;
 		playerCount++;
 		name = "Player " + playerCount;
-		color = (int)(Math.random()*254) + 1;
+		color = (int)(Math.random()*(231-17)) + 17;
 	}
 
 	private Player()

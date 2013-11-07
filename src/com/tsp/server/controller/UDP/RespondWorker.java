@@ -63,7 +63,7 @@ public class RespondWorker implements Runnable
 				if (parsedObject instanceof JSONObject)
 				{
 					Packet packet1 = Packet.parseJSONObject((JSONObject) parsedObject);
-					model.putIncoming(packet1);
+					model.processPacket(packet1);
 				}
 		}
 		catch (ParseException e)
