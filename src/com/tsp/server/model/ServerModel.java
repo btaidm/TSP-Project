@@ -142,7 +142,7 @@ public class ServerModel implements Runnable
 		while (running)
 		{
 			// processPackets();
-			proccessAttacks();
+			processAttacks();
 			processAI();
 			sendPackets();
 			try
@@ -156,7 +156,7 @@ public class ServerModel implements Runnable
 		}
 	}
 
-	private void proccessAttacks()
+	private void processAttacks()
 	{
 		for (Player player : players.values())
 		{
@@ -196,7 +196,14 @@ public class ServerModel implements Runnable
 						player.hit(a);
 						ActorUpdate aUpdate = new ActorUpdate(a.getId());
 						if (a.getHealth() <= 0)
+						{
 							aUpdate.insertValue("remove", "remove");
+							// Put in an outgoing packet for all the clients telling them
+							// that a player was killed by another player
+							String killshot = player.getName() + " k " + a.getName();
+							MessagePacket m = new MessagePacket(killshot);
+							outgoingPackets.add(m);
+						}
 						else
 							aUpdate.insertValue("health", a.getHealth());
 						outgoingPackets.add(aUpdate);
@@ -330,7 +337,14 @@ public class ServerModel implements Runnable
 							attacker.hit(a);
 							ActorUpdate aUpdate = new ActorUpdate(a.getId());
 							if (a.getHealth() <= 0)
+							{
 								aUpdate.insertValue("remove", "remove");
+								// Put in an outgoing packet for all the clients telling them
+								// that a player was killed by another player
+								String killshot = attacker.getName() + " k " + a.getName();
+								MessagePacket m = new MessagePacket(killshot);
+								outgoingPackets.add(m);
+							}
 							else
 								aUpdate.insertValue("health", a.getHealth());
 							outgoingPackets.add(aUpdate);
