@@ -1,7 +1,9 @@
 package com.tsp.server.model;
 
+import com.googlecode.blacken.core.Random;
 import com.tsp.game.actors.AI;
 import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Actor.ActorType;
 import com.tsp.game.actors.Player;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
@@ -37,7 +39,8 @@ public class ServerModel implements Runnable
 	Queue<Packet> outgoingPackets;
 	ConcurrentHashMap<Integer, Player> players;
 	boolean running = true;
-
+	boolean kill = false;
+	
 	public ServerModel()
 	{
 		LOGGER.info("New Server Model");
@@ -48,6 +51,7 @@ public class ServerModel implements Runnable
 		outgoingPackets = new LinkedList<Packet>();
 		generateDungeon();
 		dungeon.revealAll();
+		generatePotions();
 	}
 
 	public void generateDungeon()
@@ -58,7 +62,17 @@ public class ServerModel implements Runnable
 		LOGGER.info("Dungeon[{}][{}][{}]", dungeon.getDungeon().length,
 				dungeon.getDungeon()[0].length,
 				dungeon.getDungeon()[0][0].length);
+	}
 
+	/**
+	 * Randomly places two health potions per floor at start of game
+	 */
+	public void generatePotions() {
+		// For each floor in the map add two potions, randomly
+		for(int i = 0; i < 4; i++) {
+			addPotion(i);
+			addPotion(i);
+		}
 	}
 
 	public int addPlayer(String playName)
@@ -90,6 +104,34 @@ public class ServerModel implements Runnable
 		}
 		players.put(player.getId(), player);
 		return player.getId();
+	}
+
+	/**
+	 * Randomly place a potion on the specified floor
+	 * 
+	 * @param floor
+	 * @return
+	 */
+	public int addPotion(int floor) {
+		Actor potion = new Actor();
+		potion.setColor(16711680);
+		potion.setHealth(1);
+		potion.setSymbol("\u2764");
+		potion.setType(ActorType.ACTOR_POTION);
+
+		Random r = new Random();
+		boolean placedPotion = false;
+
+		while (!placedPotion) {
+			int x = r.nextInt(80);
+			int y = r.nextInt(24);
+			if (dungeon.isEmptyFloor(x, y, floor)) {
+				potion.setPos(new Point3D(x, y, floor));
+				otherActors.put(potion.getId(), potion);
+				placedPotion = true;
+			}
+		}
+		return potion.getId();
 	}
 
 	public ArrayList<Actor> getActors()
@@ -184,40 +226,51 @@ public class ServerModel implements Runnable
 			attackUpdate.insertValue("deltaY", (int) player.getDelta()
 					.getY());
 			outgoingPackets.add(attackUpdate);
+
 			Point3D attackDest = player.getAttackPos();
 
-			// If player attacked a health potion
-			if (dungeon.isHealthPotion(attackDest))
-			{
-				player.heal(2);
-				dungeon.removeTile(attackDest);
-				ActorUpdate healUpdate = new ActorUpdate(player.getId());
-				healUpdate.insertValue("health", player.getHealth());
-				outgoingPackets.add(healUpdate);
-				return;
-			}
-
-			// If player attacked another player
 			for (Actor a : actors)
 			{
 				if (a.getId() != player.getId())
 				{
 					if (a.checkHit(attackDest))
 					{
-						player.hit(a);
-						ActorUpdate aUpdate = new ActorUpdate(a.getId());
-						if (a.getHealth() <= 0)
-						{
+						// If health potion was attacked
+						if (a.getType() == ActorType.ACTOR_POTION) {
+							player.hit(a);
+							player.heal(2);
+
+							ActorUpdate aUpdate = new ActorUpdate(a.getId());
 							aUpdate.insertValue("remove", "remove");
-							// Put in an outgoing packet for all the clients telling them
-							// that a player was killed by another player
-							String killshot = player.getName() + " k " + a.getName();
+
+							ActorUpdate healUpdate = new ActorUpdate(player.getId());
+							healUpdate.insertValue("health", player.getHealth());
+
+							String killshot = player.getName() + " got health";
 							MessagePacket m = new MessagePacket(killshot);
+
+							outgoingPackets.add(aUpdate);
 							outgoingPackets.add(m);
+							outgoingPackets.add(healUpdate);
 						}
-						else
-							aUpdate.insertValue("health", a.getHealth());
-						outgoingPackets.add(aUpdate);
+						// If player was attacked
+						else {
+							player.hit(a);
+							ActorUpdate aUpdate = new ActorUpdate(a.getId());
+							if (a.getHealth() <= 0)
+							{
+								kill = true;
+								aUpdate.insertValue("remove", "remove");
+								// Put in an outgoing packet for all the clients telling them
+								// that a player was killed by another player
+								String killshot = player.getName() + " k " + a.getName();
+								MessagePacket m = new MessagePacket(killshot);
+								outgoingPackets.add(m);
+							}
+							else
+								aUpdate.insertValue("health", a.getHealth());
+							outgoingPackets.add(aUpdate);
+						}
 					}
 				}
 			}
@@ -339,29 +392,38 @@ public class ServerModel implements Runnable
 				outgoingPackets.add(attackUpdate);
 
 				Point3D attackDest = attacker.getAttackPos();
-				
-				// If player attacked a health potion
-				if (dungeon.isHealthPotion(attackDest))
-				{
-					attacker.heal(2);
-					dungeon.removeTile(attackDest);
-					ActorUpdate healUpdate = new ActorUpdate(attacker.getId());
-					healUpdate.insertValue("health", attacker.getHealth());
-					outgoingPackets.add(healUpdate);
-				}
 
-				// If player attacked another player
-				else {
-					for (Actor a : actors)
+				for (Actor a : actors)
+				{
+					if (a.getId() != attackPacket.getAttacker())
 					{
-						if (a.getId() != attackPacket.getAttacker())
+						if (a.checkHit(attackDest))
 						{
-							if (a.checkHit(attackDest))
-							{
+							// If health potion was attacked
+							if (a.getType() == ActorType.ACTOR_POTION) {
+								attacker.hit(a);
+								attacker.heal(2);
+
+								ActorUpdate aUpdate = new ActorUpdate(a.getId());
+								aUpdate.insertValue("remove", "remove");
+
+								ActorUpdate healUpdate = new ActorUpdate(attacker.getId());
+								healUpdate.insertValue("health", attacker.getHealth());
+
+								String killshot = attacker.getName() + " got health";
+								MessagePacket m = new MessagePacket(killshot);
+
+								outgoingPackets.add(aUpdate);
+								outgoingPackets.add(m);
+								outgoingPackets.add(healUpdate);
+							}
+							// If another player was attacked
+							else {
 								attacker.hit(a);
 								ActorUpdate aUpdate = new ActorUpdate(a.getId());
 								if (a.getHealth() <= 0)
 								{
+									kill = true;
 									aUpdate.insertValue("remove", "remove");
 									// Put in an outgoing packet for all the clients telling them
 									// that a player was killed by another player
@@ -473,11 +535,14 @@ public class ServerModel implements Runnable
 
 	public synchronized void removePlayer(Integer playerID)
 	{
+		if (kill) {
+			addPotion(players.get(playerID).getZ());
+			kill = false;
+		}
 		System.out.println("Removing " + players.get(playerID));
 		players.remove(playerID);
 		ActorUpdate actorUpdate = new ActorUpdate(playerID);
 		actorUpdate.insertValue("remove", "remove");
-
 		outgoingPackets.add(actorUpdate);
 	}
 
@@ -545,11 +610,6 @@ public class ServerModel implements Runnable
 
 		if (player.isAttacking() && player.attemptAttackReset())
 			return false;
-
-		if (dungeon.isHealthPotion(new Point3D(x, y, z))) {
-			player.setAttacking(true, delta);
-			return true;
-		}
 
 		if (!player.isAttacking() && (getDungeon().validPoint(newPosition)
 				&& (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition))))

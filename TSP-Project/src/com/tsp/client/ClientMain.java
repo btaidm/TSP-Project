@@ -18,8 +18,6 @@ import java.net.UnknownHostException;
 public class ClientMain
 {
 	static ServerModel serverModel = null;
-	static GameModel gm = null;
-	static TCPClient tcpClient = null;
 	public static void main(String[] arguments) throws IOException, InterruptedException
 	{
 
@@ -71,8 +69,8 @@ public class ClientMain
 
 	private static void runClient(StartupController sc, Thread server) throws IOException, InterruptedException
 	{
-		gm = new GameModel(validOrDefault(sc.getPlayer(), "Player"));
-		tcpClient = new TCPClient(gm, validOrDefault(sc.getServer(), "localhost"), 12000);
+		GameModel gm = new GameModel(validOrDefault(sc.getPlayer(), "Player"));
+		TCPClient tcpClient = new TCPClient(gm, validOrDefault(sc.getServer(), "localhost"), 12000);
 		
 		GameView gv = null;
 		try

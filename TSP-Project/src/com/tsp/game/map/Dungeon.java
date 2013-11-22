@@ -36,7 +36,7 @@ public class Dungeon
 	 */
 	public Dungeon()
 	{
-		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN, HEALTH_POTION);
+		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		generateDungeon();
 		fogOfWar = new FogOfWar(dungeon , fogOfWarHeight, fogOfWarWidth);
 	}
@@ -55,13 +55,9 @@ public class Dungeon
 				}
 			}
 		}
-		
+
 	}
-	
-	/**
-	 * 
-	 */
-	
+
 	/**
 	 *
 	 * @param cols
@@ -70,7 +66,7 @@ public class Dungeon
 	 */
 	public Dungeon(int cols, int rows, int floors)
 	{
-		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN, HEALTH_POTION);
+		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		this.cols = cols;
 		this.rows = rows;
 		this.floors = floors;
@@ -113,7 +109,7 @@ public class Dungeon
 	 */
 	public Dungeon(String[][][] dungeon)
 	{
-		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN, HEALTH_POTION);
+		mapGenerator = new MapGenerator(WALL, EMPTY_FLOOR, STAIR_UP, STAIR_DOWN);
 		this.dungeon = dungeon;
 		this.floors = dungeon.length;
 		this.cols = dungeon[0].length;
@@ -137,12 +133,12 @@ public class Dungeon
 	{
 		return dungeon;
 	}
-	
+
 	public void updateVisibleDungeon(Player player){
 		boolean[][][] currentRevealed = fogOfWar.GetFogOfWar(player.getPos());
 		visible = mergeVisible(currentRevealed, visible);
 	}
-	
+
 	private boolean[][][] mergeVisible(boolean[][][] currentRevealed, boolean[][][] visible){
 		for(int i = 0; i < currentRevealed.length; i++){
 			for(int j = 0; j < currentRevealed[0].length; j++){
@@ -243,12 +239,12 @@ public class Dungeon
 	{
 		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR));
 	}
-	
+
 	public boolean isUnrevealed(Point3D point)
 	{
 		return validPoint(point) && (getTile(point).equals(UNREVEALED));
 	}
-	
+
 	public boolean isUnrevealed(int x, int y, int z)
 	{
 		return isUnrevealed(new Point3D(x, y, z));
@@ -270,12 +266,12 @@ public class Dungeon
 		}
 		return retPoint;
 	}
-	
+
 	public void revealAll()
 	{
 		this.reveal = true;
 	}
-	
+
 	private boolean pointIsVisible(Point3D point){
 		return visible[point.getZ()][point.x][point.y];
 	}
@@ -345,52 +341,7 @@ public class Dungeon
 	{
 		return validPoint(point) && (getTile(point).equals(STAIR_DOWN));
 	}
-	
-	/**
-	 *
-	 * @param x
-	 * @param y
-	 * @param z
-	 * @return
-	 */
-	public boolean isHealthPotion(int x, int y, int z)
-	{
-		return isHealthPotion(new Point3D(x, y, z));
-	}
 
-	/**
-	 *
-	 * @param point
-	 * @return
-	 */
-	public boolean isHealthPotion(Point3D point)
-	{
-		return validPoint(point) && (getTile(point).equals(HEALTH_POTION));
-	}
-	
-	/**
-	 * Reset a given tile to a blank floor.
-	 * @param point
-	 * @return
-	 */
-	public void removeTile(Point3D point)
-	{
-		int x = point.x;
-		int y = point.y;
-		int z = point.getZ();
-		removeTile(x, y, z);
-	}
-	
-	/**
-	 * Reset a given tile to a blank floor.
-	 * @param x
-	 * @param y
-	 * @param z
-	 */
-	public void removeTile(int x, int y, int z) {
-		dungeon[z][x][y] = EMPTY_FLOOR;
-	}
-	
 	/**
 	 *
 	 * @param actors
@@ -441,7 +392,7 @@ public class Dungeon
 		boolean decending = false;
 		String wall;
 		String floor;
-		
+
 		public FloorGenerator(String wall, String floor) {
 			this.wall = wall;
 			this.floor = floor;
@@ -472,7 +423,7 @@ public class Dungeon
 
 			return map;
 		}
-		
+
 		public String[][] getMidMap(int length, int width){
 			String[][] map = GenMap(length, width);
 			while(oneToZero < .38 || oneToZero > .45){
@@ -503,7 +454,7 @@ public class Dungeon
 			while(oneToZero < .34 || oneToZero > .40){
 				map = GenMap(length, width);
 				oneToZero = getOneToZero(map, floor, wall);
-				
+
 			}
 
 			String[][] temp = new String[0][0];
@@ -524,7 +475,7 @@ public class Dungeon
 
 			return map;
 		}
-		
+
 		public void mapPointsOnFloor(String[][] floorMap){
 			RoomManager manager = new RoomManager();
 			for(int i = 0; i < floorMap.length; i++){
@@ -540,7 +491,7 @@ public class Dungeon
 				floorMap = mapBetweenPoints(floorMap, temp[0], temp[1], temp[2], temp[3]);
 			}
 		}
-		
+
 		private String[][] mapBetweenPoints(String[][] map, int x1, int y1, int x2, int y2){
 			while(x1 != x2 || y1 != y2){
 				map[x1][y1] = floor;
@@ -668,7 +619,7 @@ public class Dungeon
 			result = oneCount / (oneCount + zeroCount);
 			return result;
 		}
-		
+
 		private String[][] getMapCopy(String[][] map){
 			String[][] copy = new String[map.length][];
 			for(int i = 0; i < map.length; i++){
@@ -676,7 +627,7 @@ public class Dungeon
 			}
 			return copy;
 		}
-	
+
 	}
 
 	private class MapGenerator {
@@ -685,14 +636,12 @@ public class Dungeon
 		private String stairUp;
 		private String stairDown;
 		private String wall;
-		private String healthPotion;
 
-		public MapGenerator(String wall, String floor, String stairUp, String stairDown, String healthPotion){
+		public MapGenerator(String wall, String floor, String stairUp, String stairDown){
 			floorGenerator = new FloorGenerator(wall, floor);
 			this.stairUp = stairUp;
 			this.stairDown = stairDown;
 			this.wall = wall;
-			this.healthPotion = healthPotion;
 		}
 
 		/**
@@ -722,7 +671,6 @@ public class Dungeon
 			}
 			mapPaths(map);
 			mapStairs(map);
-			mapPotions(map);
 
 			return map;
 		}
@@ -775,48 +723,11 @@ public class Dungeon
 					int y = r.nextInt(map[i][0].length);
 
 					if (!map[i][x][y].equals(this.wall) && !map[i][x][y].equals(this.stairUp) &&
-						!map[i+1][x][y].equals(this.wall) && !map[i][x][y].equals(this.stairDown)) {
+							!map[i+1][x][y].equals(this.wall) && !map[i][x][y].equals(this.stairDown)) {
 						placedStairs = true;
-						
+
 						map[i][x][y] = stairUp;
 						map[i+1][x][y] = stairDown;
-					}
-				}
-			}
-		}
-		
-		/**
-		 * Place two health potions per floor
-		 */
-		private void mapPotions(String[][][] map) {
-			Random r = new Random();
-
-			// For each floor in the map
-			for(int i = 0; i < map.length; i++) {
-				boolean placedPotion1 = false;
-				boolean placedPotion2 = false;
-				
-				// Search for two valid locations
-				while (!placedPotion1) {
-					int x = r.nextInt(map[i].length);
-					int y = r.nextInt(map[i][0].length);
-
-					if (!map[i][x][y].equals(this.wall) && !map[i][x][y].equals(this.stairUp)
-							&& !map[i][x][y].equals(this.stairDown) && !map[i][x][y].equals(this.healthPotion)) {
-						
-						placedPotion1 = true;
-						map[i][x][y] = healthPotion;
-					}
-				}
-				while (!placedPotion2) {
-					int x = r.nextInt(map[i].length);
-					int y = r.nextInt(map[i][0].length);
-
-					if (!map[i][x][y].equals(this.wall) && !map[i][x][y].equals(this.stairUp)
-							&& !map[i][x][y].equals(this.stairDown) && !map[i][x][y].equals(this.healthPotion)) {
-						
-						placedPotion2 = true;
-						map[i][x][y] = healthPotion;
 					}
 				}
 			}
@@ -825,11 +736,11 @@ public class Dungeon
 
 	private class Room {
 		private int[][] room;
-		
+
 		public Room(){
 			room = new int[0][];
 		}
-		
+
 		public boolean roomContainsPoint(int x, int y){
 			for(int i = 0; i < room.length; i++){
 				if(room[i].length != 2){
@@ -841,19 +752,19 @@ public class Dungeon
 			}
 			return false;
 		}
-		
+
 		public boolean roomAdjacentToPoint(int x, int y){
 			return(roomContainsPoint(x + 1, y) || roomContainsPoint(x - 1, y) ||
 					roomContainsPoint(x, y + 1) || roomContainsPoint(x, y - 1));
 		}
-		
+
 		public void addPointToRoom(int x, int y){
 			room = Arrays.copyOf(room, room.length + 1);
 			room[room.length - 1] = new int[2];
 			room[room.length - 1][0] = x;
 			room[room.length - 1][1] = y;
 		}
-		
+
 		public void mergeRooms(Room roomToMerge){
 			int mergeRoomLength = roomToMerge.getRoom().length;
 			int[][] newRoom = new int[mergeRoomLength + room.length][];
@@ -861,11 +772,11 @@ public class Dungeon
 			System.arraycopy(roomToMerge.getRoom(), 0, newRoom, room.length, mergeRoomLength);
 			room = newRoom;
 		}
-		
+
 		public int[][] getRoom(){
 			return room;
 		}
-		
+
 		public int[] getRandomCoord(){
 			int loc = (int)(Math.random() * room.length);
 			return room[loc];
@@ -873,13 +784,13 @@ public class Dungeon
 	}
 
 	private class RoomManager {
-		
+
 		private ArrayList<Room> rooms;
-		
+
 		public RoomManager(){
 			rooms = new ArrayList<Room>();
 		}
-		
+
 		public boolean anyRoomsContainPoint(int x, int y){
 			for(int i = 0; i < rooms.size(); i++){
 				if(rooms.get(i).roomContainsPoint(x, y)){
@@ -888,7 +799,7 @@ public class Dungeon
 			}
 			return false;
 		}
-		
+
 		public boolean anyRoomsAdjacentToPoint(int x, int y){
 			for(int i = 0; i < rooms.size(); i++){
 				if(rooms.get(i).roomAdjacentToPoint(x, y)){
@@ -897,7 +808,7 @@ public class Dungeon
 			}
 			return false;
 		}
-		
+
 		public void addPoint(int x, int y){
 			boolean putIntoRoom = false;
 			for(int i = 0; i < rooms.size(); i++){
@@ -912,7 +823,7 @@ public class Dungeon
 			}
 			mergeNewlyAdjacentRooms(x, y);
 		}
-		
+
 		public void mergeNewlyAdjacentRooms(int x, int y){
 			ArrayList<Room> roomsNeedingMerged = new ArrayList<Room>();
 			for(Room room: rooms){
@@ -920,19 +831,19 @@ public class Dungeon
 					roomsNeedingMerged.add(room);
 				}
 			}
-			
+
 			while(roomsNeedingMerged.size() > 1){
 				roomsNeedingMerged.get(0).mergeRooms(getLastElement(roomsNeedingMerged));
 				rooms.remove(getLastElement(roomsNeedingMerged));
 				roomsNeedingMerged.remove(getLastElement(roomsNeedingMerged));
 			}
-			
+
 		}
-		
+
 		private Room getLastElement(ArrayList<Room> arrayList){
 			return arrayList.get(arrayList.size() - 1);
 		}
-		
+
 		public int howManyRoomsContainPoint(int x, int y){
 			int count = 0;
 			for(int i = 0; i < rooms.size(); i++){
@@ -942,30 +853,30 @@ public class Dungeon
 			}
 			return count;
 		}
-		
+
 		public int[][] getRandomRoomCoordinates(){
 			int[][] roomCoords = new int[0][];
-			
+
 			for(int i = 1; i < rooms.size(); i++){
 				Room room = rooms.get(i);
 				roomCoords = Arrays.copyOf(roomCoords, roomCoords.length + 1);
-				
+
 				roomCoords[roomCoords.length - 1] = room.getRandomCoord();
-				
+
 				roomCoords[roomCoords.length - 1] = Arrays.copyOf(roomCoords[roomCoords.length - 1],
 						roomCoords[roomCoords.length - 1].length + 2);
-				
+
 				System.arraycopy(rooms.get(i-1).getRandomCoord(), 0,
 						roomCoords[roomCoords.length - 1], 2, 2);
-				
+
 			}
-			
+
 			return roomCoords;
 		}
 	}
 
 
-	
+
 
 	/**
 	 *
@@ -988,16 +899,16 @@ public class Dungeon
 	public boolean walkableTile(Point3D point)
 	{
 		return validPoint(point) && (getTile(point).equals(EMPTY_FLOOR) || getTile(point).equals(STAIR_DOWN) ||
-		                             getTile(point).equals(STAIR_UP));
+				getTile(point).equals(STAIR_UP));
 	}
-	
+
 	private class FogOfWar {
-		
+
 		String[][][] map;
 		double height;
 		double width;
-		
-		
+
+
 		public FogOfWar(String[][][] dungeon, double height, double width){
 			this.map = dungeon;
 			this.height = height;
@@ -1026,7 +937,7 @@ public class Dungeon
 			System.out.println(count);
 			return visible;
 		}
-		
+
 		/**
 		 * if the floors are the same, then checks distance around point;
 		 * 
@@ -1064,5 +975,5 @@ public class Dungeon
 		}
 	}
 
-	
+
 }

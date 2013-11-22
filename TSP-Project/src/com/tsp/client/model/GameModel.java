@@ -108,8 +108,7 @@ public class GameModel
 		}
 		if (dungeon.isUnrevealed(x, y, z))
 			return 232 + 9;
-		if (dungeon.isHealthPotion(x, y, z))
-			return 16711680;
+
 		for (Actor a : otherActors.values())
 		{
 			if (a.getPos().equals(new Point3D(x, y, z)))
@@ -332,18 +331,12 @@ public class GameModel
 		if (getMe().isAttacking() && getMe().attemptAttackReset())
 			return false;
 
-		if (getDungeon().isHealthPotion(new Point3D(x, y, z))) {
-			me.setAttacking(true, delta);
-			return true;
-		}
-		
 		if (getDungeon().validPoint(newPosition)
 				&& (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition)))
 		{
 			me.setAttacking(true, delta);
 			return true;
 		}
-		
 
 		return false;
 	}
