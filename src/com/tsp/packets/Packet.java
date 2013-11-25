@@ -26,7 +26,8 @@ public abstract class Packet implements JSONAware
 		ACTOR_PACKET,
 		UPDATE_PACKET,
 		ATTACK_PACKET,
-		QUIT_PACKET
+		QUIT_PACKET,
+		MESSAGE_PACKET
 	}
 
 	protected static Integer packetCount = 0;
@@ -151,6 +152,10 @@ public abstract class Packet implements JSONAware
 						actorUpdate.insertValue((String) entry,obj.get(entry));
 					}
 					return actorUpdate;
+				}
+				case MESSAGE_PACKET:
+				{
+					return new MessagePacket(obj.get("message").toString());
 				}
 				default:
 					throw new IllegalArgumentException("Not a valid packet");

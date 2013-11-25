@@ -4,10 +4,7 @@ import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
