@@ -1,5 +1,13 @@
 package com.tsp.client.view;
 
+import java.awt.Point;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.googlecode.blacken.colors.ColorNames;
 import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
@@ -19,13 +27,7 @@ import com.tsp.packets.ActorPacket;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.awt.*;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.tsp.packets.ScorePacket;
 
 public class GameView implements Listenable
 {
@@ -50,6 +52,7 @@ public class GameView implements Listenable
 	private boolean restart = true;
 	private boolean playing = true;
 	private boolean initStuff = true;
+	private boolean kdfeed = true;
 
 	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
@@ -164,6 +167,10 @@ public class GameView implements Listenable
 				MessagePacket messageUpdate = (MessagePacket) packet;
 				model.addMessage(messageUpdate);
 				break;
+			case SCORE_PACKET:
+				ScorePacket scoreUpdate = (ScorePacket) packet;
+				model.updateScore(scoreUpdate);
+				break;
 			default:
 				break;
 			}
@@ -216,7 +223,8 @@ public class GameView implements Listenable
 
 		// Draw the message screen
 		int level = 0;
-		for (String m : this.model.getMessages()) {
+		java.util.List<String> queue = (this.kdfeed ? this.model.getMessages() : this.model.getScores());
+		for (String m : queue) {
 			if (m.length() > HARD_MESSAGE_LENGTH_LIMIT) {
 				m = m.substring(0, HARD_MESSAGE_LENGTH_LIMIT);
 			}
@@ -381,6 +389,8 @@ public class GameView implements Listenable
 						attackDelta = Point3D.UP;
 					}
 				break;
+			case BlackenKeys.KEY_TAB:
+				this.kdfeed = !this.kdfeed;
 		}
 		if (moved && model.attemptMove(moveDelta))
 		{

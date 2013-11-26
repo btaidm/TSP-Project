@@ -15,6 +15,8 @@ import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
+import com.tsp.packets.ScorePacket;
+import com.tsp.util.KDTuple;
 
 public class GameModel
 {
@@ -32,6 +34,7 @@ public class GameModel
 
 	// Game tile types
 	private HashMap<Integer, Actor> otherActors;
+	private HashMap<String, KDTuple> scores;
 	private boolean ready = false;
 
 	private Player me;
@@ -41,6 +44,7 @@ public class GameModel
 	public GameModel()
 	{
 		otherActors = new HashMap<Integer, Actor>();
+		scores = new HashMap<String, KDTuple>();
 	}
 
 	public GameModel(String playerName)
@@ -137,6 +141,8 @@ public class GameModel
 	{
 		this.me = me;
 		dungeon.updateVisibleDungeon(this.me);
+		if (!scores.containsKey(me.getName()))
+			scores.put(me.getName(), new KDTuple());
 	}
 
 	public void setQuit(boolean quit)
@@ -207,8 +213,10 @@ public class GameModel
 				{
 					me.setHealth(0);
 					setQuit(true);
-				} else
+				} else {
 					otherActors.remove(actorUpdate.getActorID());
+					scores.remove(actorUpdate.getActorID());
+				}
 			} else
 			{
 				boolean meMoved = false;
@@ -270,8 +278,14 @@ public class GameModel
 	public void addActor(Actor actor)
 	{
 		if (actor.getId() != me.getId()
-				&& !otherActors.containsKey(actor.getId()))
+				&& !otherActors.containsKey(actor.getId())) {
 			otherActors.put(actor.getId(), actor);
+			scores.put(actor.getName(), new KDTuple());
+		}
+	}
+	
+	public void setScoreForActor(Actor actor, KDTuple score) {
+		scores.put(actor.getName(), score);
 	}
 
 	private boolean occupied(Point3D point)
@@ -364,7 +378,30 @@ public class GameModel
 			if (newKey > 0) {
 				messages.set(i, new SimpleEntry<Integer, String>(newKey, current.getValue()));
 				ret.add(current.getValue());
+			} else {
+				messages.remove(i);
 			}
+		}
+		
+		return ret;
+	}
+	
+	public void updateScore(ScorePacket packet) {
+		this.scores.put(packet.getPlayerID(), packet.getScore());
+	}
+	
+	public List<String> getScores() {
+		List<String> ret = new ArrayList<String>();
+		
+		for (String name: scores.keySet()) {
+			KDTuple score = scores.get(name);
+			StringBuilder b = new StringBuilder().append(score.kills()/3)
+				.append("/")
+				.append(score.deaths()/3)
+				.append("-")
+				.append(name);
+			
+			ret.add(b.toString());
 		}
 		
 		return ret;

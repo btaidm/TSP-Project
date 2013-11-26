@@ -1,14 +1,14 @@
 package com.tsp.packets;
 
-import com.tsp.game.actors.Actor;
-import com.tsp.game.actors.Player;
-import com.tsp.game.map.Point3D;
+import java.util.Collection;
+
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import com.tsp.game.actors.Actor;
+import com.tsp.game.actors.Player;
+import com.tsp.game.map.Point3D;
+import com.tsp.util.KDTuple;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,7 +27,7 @@ public abstract class Packet implements JSONAware
 		UPDATE_PACKET,
 		ATTACK_PACKET,
 		QUIT_PACKET,
-		MESSAGE_PACKET
+		MESSAGE_PACKET, SCORE_PACKET
 	}
 
 	protected static Integer packetCount = 0;
@@ -156,6 +156,14 @@ public abstract class Packet implements JSONAware
 				case MESSAGE_PACKET:
 				{
 					return new MessagePacket(obj.get("message").toString());
+				}
+				case SCORE_PACKET:
+				{
+					String playerId = obj.get("playerID").toString();
+					Integer kills = ((Long) obj.get("kills")).intValue();
+					Integer deaths = ((Long) obj.get("deaths")).intValue();
+					KDTuple score = new KDTuple(kills, deaths);
+					return new ScorePacket(playerId, score);
 				}
 				default:
 					throw new IllegalArgumentException("Not a valid packet");
