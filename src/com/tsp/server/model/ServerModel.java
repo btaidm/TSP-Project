@@ -1,22 +1,31 @@
 package com.tsp.server.model;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.tsp.game.actors.AI;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.actors.Player;
 import com.tsp.game.map.Dungeon;
 import com.tsp.game.map.Point3D;
-import com.tsp.packets.*;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.ActorUpdate;
+import com.tsp.packets.AttackPacket;
+import com.tsp.packets.MessagePacket;
+import com.tsp.packets.MovementPacket;
+import com.tsp.packets.Packet;
+import com.tsp.packets.ScorePacket;
 import com.tsp.server.controller.TCP.TCPServer;
 import com.tsp.server.controller.UDP.UDPServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
+import com.tsp.util.KDTuple;
 
 /**
  * Created with IntelliJ IDEA. User: Tim Date: 10/17/13 Time: 10:45 AM To change
@@ -36,12 +45,14 @@ public class ServerModel implements Runnable
 	HashMap<Integer, Actor> otherActors;
 	Queue<Packet> outgoingPackets;
 	ConcurrentHashMap<Integer, Player> players;
+	ConcurrentHashMap<String, KDTuple> scores;
 	boolean running = true;
 
 	public ServerModel()
 	{
 		LOGGER.info("New Server Model");
 		players = new ConcurrentHashMap<Integer, Player>();
+		scores = new ConcurrentHashMap<String, KDTuple>();
 		ais = new HashMap<Integer, AI>();
 		otherActors = new HashMap<Integer, Actor>();
 		incomingPackets = new LinkedList<Packet>();
@@ -89,6 +100,14 @@ public class ServerModel implements Runnable
 			}
 		}
 		players.put(player.getId(), player);
+		
+		if (!scores.containsKey(player.getName()))
+			scores.put(player.getName(), new KDTuple());
+		
+		// Send out the scores again so everyone is sync'd up
+		for (String name : scores.keySet()) {
+			outgoingPackets.add(new ScorePacket(name, scores.get(name)));
+		}
 		return player.getId();
 	}
 
@@ -203,6 +222,16 @@ public class ServerModel implements Runnable
 							String killshot = player.getName() + " k " + a.getName();
 							MessagePacket m = new MessagePacket(killshot);
 							outgoingPackets.add(m);
+							
+							// Also send out two score packets, one for each player
+							// that was involved in the exchange
+							KDTuple attackerScore = scores.get(player.getName());
+							attackerScore.incrementKills();
+							KDTuple defenderScore = scores.get(a.getName());
+							defenderScore.incrementDeaths();
+							
+							outgoingPackets.add(new ScorePacket(player.getName(), attackerScore));
+							outgoingPackets.add(new ScorePacket(a.getName(), defenderScore));
 						}
 						else
 							aUpdate.insertValue("health", a.getHealth());
@@ -449,6 +478,7 @@ public class ServerModel implements Runnable
 	public synchronized void removePlayer(Integer playerID)
 	{
 		System.out.println("Removing " + players.get(playerID));
+		scores.remove(players.get(playerID).getName());
 		players.remove(playerID);
 		ActorUpdate actorUpdate = new ActorUpdate(playerID);
 		actorUpdate.insertValue("remove", "remove");
@@ -539,5 +569,9 @@ public class ServerModel implements Runnable
 				return true;
 		}
 		return false;
+	}
+	
+	public Map<String, KDTuple> getScores() {
+		return this.scores;
 	}
 }

@@ -7,6 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 import org.json.simple.JSONObject;
@@ -17,7 +18,9 @@ import org.slf4j.LoggerFactory;
 import com.tsp.game.actors.Actor;
 import com.tsp.packets.ActorPacket;
 import com.tsp.packets.Packet;
+import com.tsp.packets.ScorePacket;
 import com.tsp.server.model.ServerModel;
+import com.tsp.util.KDTuple;
 import com.tsp.util.SocketIO;
 
 /**
@@ -73,7 +76,6 @@ class clientThread extends Thread
 			 */
 
 			sendDungeon(serverModel.getDungeonArray());
-
 			String name = socketIO.ReadString().trim();
 
 			viewer = name.equals("TSPVIEWER");
@@ -95,7 +97,6 @@ class clientThread extends Thread
 				socketIO.WriteInt(-1);
 			}
 			sendActors();
-
 			Selector selector = Selector.open();
 			clientSocket.configureBlocking(false);
 			clientSocket.register(selector, clientSocket.validOps());
@@ -265,5 +266,4 @@ class clientThread extends Thread
 		ActorPacket player = new ActorPacket(serverModel.getPlayer(playerID));
 		TCPServer.addOutGoingPacket(player);
 	}
-
 }
