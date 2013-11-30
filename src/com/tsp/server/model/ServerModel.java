@@ -478,6 +478,7 @@ public class ServerModel implements Runnable
 	public synchronized void removePlayer(Integer playerID)
 	{
 		System.out.println("Removing " + players.get(playerID));
+		scores.remove(players.get(playerID).getName());
 		players.remove(playerID);
 		ActorUpdate actorUpdate = new ActorUpdate(playerID);
 		actorUpdate.insertValue("remove", "remove");

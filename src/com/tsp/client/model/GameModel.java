@@ -214,8 +214,8 @@ public class GameModel
 					me.setHealth(0);
 					setQuit(true);
 				} else {
+					scores.remove(otherActors.get(actorUpdate.getActorID()).getName());
 					otherActors.remove(actorUpdate.getActorID());
-					scores.remove(actorUpdate.getActorID());
 				}
 			} else
 			{
