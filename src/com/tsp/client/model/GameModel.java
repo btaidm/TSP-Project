@@ -22,10 +22,10 @@ public class GameModel
 {
 
 	private int MESSAGE_TIMEOUT = 50;
-	
+
 	Queue<Packet> packets = new LinkedList<Packet>();
 	List<SimpleEntry<Integer, String>> messages = new ArrayList<SimpleEntry<Integer, String>>();
-	
+
 	boolean quit = false;
 
 	// Actor and dungeon
@@ -105,8 +105,8 @@ public class GameModel
 	{
 		if (me.getPos().equals(new Point3D(x, y, z))
 				|| (attackLocation != null && x == attackLocation.getX()
-						&& y == attackLocation.getY() && z == attackLocation
-						.getZ()))
+				&& y == attackLocation.getY() && z == attackLocation
+				.getZ()))
 		{
 			return me.getColor();
 		}
@@ -263,9 +263,9 @@ public class GameModel
 				{
 					((Player) actor).setAttacking((Boolean) actorUpdate
 							.getValue("attacking"), new Point3D(
-							((Long) actorUpdate.getValue("deltaX")).intValue(),
-							((Long) actorUpdate.getValue("deltaY")).intValue(),
-							0));
+									((Long) actorUpdate.getValue("deltaX")).intValue(),
+									((Long) actorUpdate.getValue("deltaY")).intValue(),
+									0));
 				}
 				if (meMoved)
 				{
@@ -283,7 +283,7 @@ public class GameModel
 			scores.put(actor.getName(), new KDTuple());
 		}
 	}
-	
+
 	public void setScoreForActor(Actor actor, KDTuple score) {
 		scores.put(actor.getName(), score);
 	}
@@ -354,12 +354,12 @@ public class GameModel
 
 		return false;
 	}
-	
+
 	// Messaging functionality
 	public void addMessage(MessagePacket packet) {
 		String message = packet.getMessage();
 		SimpleEntry<Integer, String> newEntry = new SimpleEntry<Integer, String>(MESSAGE_TIMEOUT, message);
-		
+
 		// Make sure that this message doesn't already exist
 		for (int i = 0; i < messages.size(); i++) {
 			if (messages.get(i).getValue().equals(message))
@@ -367,11 +367,11 @@ public class GameModel
 		}
 		messages.add(newEntry);
 	}
-	
+
 	public List<String> getMessages() {
 		// Decrement the scores of all the messages by one
 		List<String> ret = new ArrayList<String>();
-		
+
 		for (int i = 0; i < messages.size(); i++) {
 			SimpleEntry<Integer, String> current = messages.get(i);
 			Integer newKey = current.getKey().intValue() - 1;
@@ -382,28 +382,43 @@ public class GameModel
 				messages.remove(i);
 			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	public void updateScore(ScorePacket packet) {
 		this.scores.put(packet.getPlayerID(), packet.getScore());
 	}
-	
+
 	public List<String> getScores() {
 		List<String> ret = new ArrayList<String>();
-		
-		for (String name: scores.keySet()) {
-			KDTuple score = scores.get(name);
-			StringBuilder b = new StringBuilder().append(score.kills()/3)
-				.append("/")
-				.append(score.deaths()/3)
-				.append("-")
-				.append(name);
+		List<String> used = new ArrayList<String>();
+
+		for (int i = 0; i < scores.size(); i++) {
+			String greatestKillsName = "";
+			KDTuple greatestScore = null;
 			
+			// Locate the greatest scorer so far
+			for (String name: scores.keySet()) {
+				if (used.contains(name))
+					continue;
+				
+				KDTuple score = scores.get(name);
+				if (greatestScore == null || score.kills() > greatestScore.kills()) {
+					greatestKillsName = name;
+					greatestScore = score;
+				}
+			}
+			
+			StringBuilder b = new StringBuilder().append(greatestScore.kills()/3)
+					.append("/")
+					.append(greatestScore.deaths()/3)
+					.append("-")
+					.append(greatestKillsName);
+
 			ret.add(b.toString());
+			used.add(greatestKillsName);
 		}
-		
 		return ret;
 	}
 }
