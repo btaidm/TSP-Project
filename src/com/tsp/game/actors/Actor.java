@@ -74,14 +74,10 @@ public class Actor implements JSONAware
 		return type;
 	}
 
-	/**
-	 * Updates the type of the actor
-	 * @param type the new type
-	 */
 	public void setType(ActorType type) {
 		this.type = type;
 	}
-
+	
 	/**
 	 * Gets the actors symbol
 	 * @return the symbol string
@@ -163,9 +159,6 @@ public class Actor implements JSONAware
 		return color;
 	}
 
-	/**
-	 * 
-	 */
 	public void setColor(int color) {
 		this.color = color;
 	}
@@ -283,6 +276,12 @@ public class Actor implements JSONAware
 	{
 		attackee.setHealth(attackee.getHealth() - getDamage());
 	}
+	
+	public void heal(int healAmount) {
+		if (this.health < 30) {
+			this.setHealth(health + healAmount);
+		}
+	}
 
 	/**
 	 * Gets the damage that the actors deals
@@ -291,17 +290,6 @@ public class Actor implements JSONAware
 	int getDamage()
 	{
 		return 1;
-	}
-
-	/**
-	 * Heal actor after activating health potion
-	 * @param healAmount
-	 */
-	public void heal(int healAmount)
-	{
-		if (this.health < 30) {
-			this.setHealth(health + healAmount);
-		}
 	}
 
 	/**
@@ -342,14 +330,14 @@ public class Actor implements JSONAware
 	public String toString()
 	{
 		return "Actor{" +
-				"pos=" + pos +
-				", name='" + name + '\'' +
-				", id=" + id +
-				", health=" + health +
-				", color=" + color +
-				", type=" + type +
-				", symbol='" + symbol + '\'' +
-				'}';
+		       "pos=" + pos +
+		       ", name='" + name + '\'' +
+		       ", id=" + id +
+		       ", health=" + health +
+		       ", color=" + color +
+		       ", type=" + type +
+		       ", symbol='" + symbol + '\'' +
+		       '}';
 	}
 
 	public void setID(int ID)
