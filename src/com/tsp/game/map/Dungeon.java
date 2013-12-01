@@ -16,8 +16,8 @@ public class Dungeon
 {
 	public static final String EMPTY_FLOOR = " ";
 	public static final String WALL = "#";
-	public static final String STAIR_UP = "U";//"\u25B2";
-	public static final String STAIR_DOWN = "P";//"\u25BC";
+	public static final String STAIR_UP = "\u25B2";
+	public static final String STAIR_DOWN = "\u25BC";
 	public static final String UNREVEALED = "&";
 	int fogOfWarHeight = 2;
 	int fogOfWarWidth = 4;
