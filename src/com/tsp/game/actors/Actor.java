@@ -74,6 +74,10 @@ public class Actor implements JSONAware
 		return type;
 	}
 
+	public void setType(ActorType type) {
+		this.type = type;
+	}
+	
 	/**
 	 * Gets the actors symbol
 	 * @return the symbol string
@@ -155,6 +159,9 @@ public class Actor implements JSONAware
 		return color;
 	}
 
+	public void setColor(int color) {
+		this.color = color;
+	}
 	/**
 	 * Checks if actor was hit
 	 * @param x the x coordinate
@@ -269,6 +276,12 @@ public class Actor implements JSONAware
 	{
 		attackee.setHealth(attackee.getHealth() - getDamage());
 	}
+	
+	public void heal(int healAmount) {
+		if (this.health < 30) {
+			this.setHealth(health + healAmount);
+		}
+	}
 
 	/**
 	 * Gets the damage that the actors deals
@@ -342,6 +355,7 @@ public class Actor implements JSONAware
 	public enum ActorType
 	{
 		ACTOR_PLAYER,
-		ACTOR_AI
+		ACTOR_AI,
+		ACTOR_POTION
 	}
 }
