@@ -1,4 +1,0 @@
-org.slf4j.simpleLogger.logFile=System.err
-org.slf4j.simpleLogger.defaultLogLevel=debug
-org.slf4j.simpleLogger.log.com.googlecode.blacken.swing.BlackenPanel=warn
-org.slf4j.simpleLogger.log.com.googlecode.blacken.swing.SwingTerminal=warn
