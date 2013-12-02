@@ -108,6 +108,7 @@ public class TCPClient extends Thread
 		{
 			connect();
 			model.setDungeon(getDungeon());
+			//getScores();
 			sendName(model.getMe().getName());
 			int id = this.getID();
 			if (id == -1)
@@ -335,5 +336,11 @@ public class TCPClient extends Thread
 		this.running = running;
 	}
 
-
+	public void getScores() throws IOException {
+		int scores = socketIO.ReadInt();
+		
+		for (int i = 0; i < scores; i++) {
+			System.out.println(socketIO.ReadString());
+		}
+	}
 }
