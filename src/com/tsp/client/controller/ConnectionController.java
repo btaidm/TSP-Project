@@ -2,10 +2,7 @@ package com.tsp.client.controller;
 
 import com.tsp.client.event.GameEvent;
 import com.tsp.client.event.GameListener;
-import com.tsp.packets.ActorUpdate;
-import com.tsp.packets.AttackPacket;
-import com.tsp.packets.MovementPacket;
-import com.tsp.packets.Packet;
+import com.tsp.packets.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,6 +177,7 @@ public class ConnectionController implements GameListener
 	private void processInit()
 	{
 		sendBuf.clear();
+		sendBuf.put((new MessagePacket("")).toJSONString().getBytes());
 		sendBuf.flip();
 
 		try
@@ -237,6 +235,10 @@ public class ConnectionController implements GameListener
 	 */
 	private void processTick()
 	{
+		if (System.currentTimeMillis() % 400 < 20)
+		{
+			packets.add(new MessagePacket(""));
+		}
 		for (Packet packet : packets)
 		{
 			if (socket != null)

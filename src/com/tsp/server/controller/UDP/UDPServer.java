@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,12 +18,13 @@ import java.util.ArrayList;
  */
 public class UDPServer extends Thread
 {
+	static Object object = new Object();
 	private static boolean quit = false;
 	private static ByteBuffer sendBuf = ByteBuffer.allocate(1024);
 	private static DatagramChannel serverChannel = null;
 
 	ServerModel model;
-	private static ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
+	private static Map<InetSocketAddress, Long> addresses = new HashMap<InetSocketAddress, Long>();
 
 	public UDPServer(ServerModel serverModel)
 	{
@@ -46,9 +47,12 @@ public class UDPServer extends Thread
 				ByteBuffer recBuf = ByteBuffer.allocate(1024);
 				recBuf.clear();
 				//serverSocket.receive(receivePacket);
-				InetSocketAddress receiveAddr = (InetSocketAddress) serverChannel.receive(recBuf);
-				if (!addresses.contains(receiveAddr)) addresses.add(receiveAddr);
-				new Thread(new RespondWorker(serverChannel, recBuf, receiveAddr, model)).start();
+				synchronized (object)
+				{
+					InetSocketAddress receiveAddr = (InetSocketAddress) serverChannel.receive(recBuf);
+					addresses.put(receiveAddr, System.currentTimeMillis());
+					new Thread(new RespondWorker(serverChannel, recBuf, receiveAddr, model)).start();
+				}
 				Thread.sleep(50);
 			}
 		}
@@ -85,19 +89,37 @@ public class UDPServer extends Thread
 
 	public static void sendPacket(Packet e)
 	{
-		for (InetSocketAddress addr : addresses)
+		synchronized (object)
 		{
-			sendBuf.clear();
-			sendBuf.put(e.toJSONString().getBytes());
-			sendBuf.flip();
+			Set<Map.Entry<InetSocketAddress, Long>> set = new HashSet<Map.Entry<InetSocketAddress, Long>>(addresses.entrySet());
+			for (Map.Entry<InetSocketAddress, Long> entry : set)
+			{
+				if (System.currentTimeMillis() - entry.getValue() <= 500)
+				{
+					sendBuf.clear();
+					sendBuf.put(e.toJSONString().getBytes());
+					sendBuf.flip();
 
-			try
-			{
-				serverChannel.send(sendBuf, addr);
-			}
-			catch (IOException ex)
-			{
+					try
+					{
+						serverChannel.send(sendBuf, entry.getKey());
+					}
+					catch (IOException ex)
+					{
+					}
+				}
+				else
+				{
+					addresses.remove(entry.getKey());
+					System.out.println("Timeout: " + entry.getKey().toString());
+				}
 			}
 		}
+	}
+
+	public static synchronized void remove(InetSocketAddress address)
+	{
+		System.out.println("Removing Address");
+		addresses.remove(address);
 	}
 }

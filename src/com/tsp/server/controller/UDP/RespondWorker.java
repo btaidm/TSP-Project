@@ -70,6 +70,10 @@ public class RespondWorker implements Runnable
 			if (parsedObject instanceof JSONObject)
 			{
 				Packet packet1 = Packet.parseJSONObject((JSONObject) parsedObject);
+				if(packet1.getPacketType() == Packet.PacketType.QUIT_PACKET)
+				{
+					UDPServer.remove(address);
+				}
 				model.processPacket(packet1);
 			}
 		}

@@ -1,7 +1,9 @@
 package com.tsp.client.controller;
 
 import com.tsp.client.model.GameModel;
+import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
+import com.tsp.packets.QuitPacket;
 import com.tsp.util.Rolling;
 import com.tsp.util.SocketIO;
 import org.json.simple.JSONObject;
@@ -73,7 +75,14 @@ public class UDPClient extends Thread
 			}
 			model.insertPacket(getPacket());
 		}
-
+		try
+		{
+			sendQuit();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+		}
 		System.out.println("Quiting");
 	}
 
@@ -122,6 +131,18 @@ public class UDPClient extends Thread
 	 */
 	public void sendQuit() throws IOException
 	{
+		recBuf.clear();
+		recBuf.put((new QuitPacket()).toJSONString().getBytes());
+		recBuf.flip();
+
+		try
+		{
+			clientSocket.send(recBuf, new InetSocketAddress(addr, port));
+		}
+		catch (IOException e)
+		{
+			LOGGER.error("{}", e);
+		}
 		if (clientSocket != null)
 			clientSocket.close();
 	}
