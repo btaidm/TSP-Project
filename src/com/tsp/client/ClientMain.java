@@ -14,12 +14,14 @@ import java.io.IOException;
 public class ClientMain
 {
 	static ServerModel serverModel = null;
-	public static void main(String[] arguments) throws IOException, InterruptedException
+	public static void main(String[] arguments) throws IOException
 	{
-
+		System.setProperty("TEST", "false");
 		StartupView sv = new StartupView();
 		StartupController sc = new StartupController(sv);
 		sv.addListener(sc);
+		
+		
 		sv.setVisible(true);
 		
 		Thread server = null;
