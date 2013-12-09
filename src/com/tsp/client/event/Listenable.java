@@ -1,7 +1,6 @@
 package com.tsp.client.event;
 
 import java.util.HashMap;
-import java.util.Properties;
 
 
 

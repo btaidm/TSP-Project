@@ -1,13 +1,5 @@
 package com.tsp.client.model;
 
-import java.awt.Point;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
 import com.tsp.game.actors.Actor;
 import com.tsp.game.actors.Player;
 import com.tsp.game.map.Dungeon;
@@ -17,6 +9,12 @@ import com.tsp.packets.MessagePacket;
 import com.tsp.packets.Packet;
 import com.tsp.packets.ScorePacket;
 import com.tsp.util.KDTuple;
+
+import java.awt.*;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.*;
+import java.util.List;
+import java.util.Queue;
 
 public class GameModel
 {
@@ -41,6 +39,8 @@ public class GameModel
 	private Dungeon dungeon;
 	private String playerName;
 
+	private boolean move = false;
+
 	public GameModel()
 	{
 		otherActors = new HashMap<Integer, Actor>();
@@ -64,9 +64,19 @@ public class GameModel
 		if (me == null)
 		{
 			me = new Player(this.playerName, getDungeon().getRows(),
-					getDungeon().getColumns(), getDungeon().getFloors());
+			                getDungeon().getColumns(), getDungeon().getFloors());
 		}
 		return me;
+	}
+
+	public void setMoving(boolean move)
+	{
+		this.move = move;
+	}
+
+	public boolean Moving()
+	{
+		return move;
 	}
 
 	/* Methods used to get symbols and colors for drawing in the map */
@@ -76,7 +86,8 @@ public class GameModel
 		if (me.getPos().equals(point))
 		{
 			return me.getSymbol();
-		} else if (me.isAttacking() && me.getAttackPos().equals(point))
+		}
+		else if (me.isAttacking() && me.getAttackPos().equals(point))
 		{
 			return me.getAttackSymbol();
 		}
@@ -91,7 +102,7 @@ public class GameModel
 				if (a instanceof Player)
 				{
 					if (((Player) a).isAttacking()
-							&& ((Player) a).getAttackPos().equals(point))
+					    && ((Player) a).getAttackPos().equals(point))
 					{
 						return ((Player) a).getAttackSymbol();
 					}
@@ -104,8 +115,8 @@ public class GameModel
 	public int getColor(int x, int y, int z)
 	{
 		if (me.getPos().equals(new Point3D(x, y, z))
-				|| (attackLocation != null && x == attackLocation.getX()
-				&& y == attackLocation.getY() && z == attackLocation
+		    || (attackLocation != null && x == attackLocation.getX()
+		        && y == attackLocation.getY() && z == attackLocation
 				.getZ()))
 		{
 			return me.getColor();
@@ -205,7 +216,7 @@ public class GameModel
 	public void update(ActorUpdate actorUpdate)
 	{
 		if (otherActors.containsKey(actorUpdate.getActorID())
-				|| getMe().getId() == actorUpdate.getActorID())
+		    || getMe().getId() == actorUpdate.getActorID())
 		{
 			if (actorUpdate.contains("remove"))
 			{
@@ -213,11 +224,14 @@ public class GameModel
 				{
 					me.setHealth(0);
 					setQuit(true);
-				} else {
+				}
+				else
+				{
 					scores.remove(otherActors.get(actorUpdate.getActorID()).getName());
 					otherActors.remove(actorUpdate.getActorID());
 				}
-			} else
+			}
+			else
 			{
 				boolean meMoved = false;
 				Actor actor = (getMe().getId() == actorUpdate.getActorID() ? getMe()
@@ -225,7 +239,7 @@ public class GameModel
 
 				if (actorUpdate.contains("X"))
 				{
-					actor.setX(((Long) actorUpdate.getValue("X")).intValue());
+						actor.setX(((Long) actorUpdate.getValue("X")).intValue());
 					if (actor.getId() == me.getId())
 					{
 						meMoved = true;
@@ -234,7 +248,7 @@ public class GameModel
 
 				if (actorUpdate.contains("Y"))
 				{
-					actor.setY(((Long) actorUpdate.getValue("Y")).intValue());
+						actor.setY(((Long) actorUpdate.getValue("Y")).intValue());
 					if (actor.getId() == me.getId())
 					{
 						meMoved = true;
@@ -243,7 +257,7 @@ public class GameModel
 
 				if (actorUpdate.contains("Z"))
 				{
-					actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
+						actor.setZ(((Long) actorUpdate.getValue("Z")).intValue());
 					if (actor.getId() == me.getId())
 					{
 						meMoved = true;
@@ -252,20 +266,20 @@ public class GameModel
 
 				if (actorUpdate.contains("health"))
 					actor.setHealth(((Long) actorUpdate.getValue("health"))
-							.intValue());
+							                .intValue());
 
 				if (actorUpdate.contains("symbol"))
 					actor.setSymbol((String) actorUpdate.getValue("symbol"));
 
 				if (actorUpdate.contains("attacking")
-						&& actorUpdate.contains("deltaX")
-						&& actorUpdate.contains("deltaY"))
+				    && actorUpdate.contains("deltaX")
+				    && actorUpdate.contains("deltaY"))
 				{
 					((Player) actor).setAttacking((Boolean) actorUpdate
 							.getValue("attacking"), new Point3D(
-									((Long) actorUpdate.getValue("deltaX")).intValue(),
-									((Long) actorUpdate.getValue("deltaY")).intValue(),
-									0));
+							((Long) actorUpdate.getValue("deltaX")).intValue(),
+							((Long) actorUpdate.getValue("deltaY")).intValue(),
+							0));
 				}
 				if (meMoved)
 				{
@@ -278,13 +292,15 @@ public class GameModel
 	public void addActor(Actor actor)
 	{
 		if (actor.getId() != me.getId()
-				&& !otherActors.containsKey(actor.getId())) {
+		    && !otherActors.containsKey(actor.getId()))
+		{
 			otherActors.put(actor.getId(), actor);
 			scores.put(actor.getName(), new KDTuple());
 		}
 	}
 
-	public void setScoreForActor(Actor actor, KDTuple score) {
+	public void setScoreForActor(Actor actor, KDTuple score)
+	{
 		scores.put(actor.getName(), score);
 	}
 
@@ -318,13 +334,16 @@ public class GameModel
 				if (dungeon.isEmptyFloor(x, y, z))
 				{
 					return true;
-				} else if (dungeon.isStairUp(x, y, z))
+				}
+				else if (dungeon.isStairUp(x, y, z))
 				{
 					return true;
-				} else if (dungeon.isStairDown(x, y, z))
+				}
+				else if (dungeon.isStairDown(x, y, z))
 				{
 					return true;
-				} else
+				}
+				else
 				{
 					return false;
 				}
@@ -346,7 +365,7 @@ public class GameModel
 			return false;
 
 		if (getDungeon().validPoint(newPosition)
-				&& (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition)))
+		    && (dungeon.isEmptyFloor(new Point3D(x, y, z)) || occupied(newPosition)))
 		{
 			me.setAttacking(true, delta);
 			return true;
@@ -356,29 +375,36 @@ public class GameModel
 	}
 
 	// Messaging functionality
-	public void addMessage(MessagePacket packet) {
+	public void addMessage(MessagePacket packet)
+	{
 		String message = packet.getMessage();
 		SimpleEntry<Integer, String> newEntry = new SimpleEntry<Integer, String>(MESSAGE_TIMEOUT, message);
 
 		// Make sure that this message doesn't already exist
-		for (int i = 0; i < messages.size(); i++) {
+		for (int i = 0; i < messages.size(); i++)
+		{
 			if (messages.get(i).getValue().equals(message))
 				return;
 		}
 		messages.add(newEntry);
 	}
 
-	public List<String> getMessages() {
+	public List<String> getMessages()
+	{
 		// Decrement the scores of all the messages by one
 		List<String> ret = new ArrayList<String>();
 
-		for (int i = 0; i < messages.size(); i++) {
+		for (int i = 0; i < messages.size(); i++)
+		{
 			SimpleEntry<Integer, String> current = messages.get(i);
 			Integer newKey = current.getKey().intValue() - 1;
-			if (newKey > 0) {
+			if (newKey > 0)
+			{
 				messages.set(i, new SimpleEntry<Integer, String>(newKey, current.getValue()));
 				ret.add(current.getValue());
-			} else {
+			}
+			else
+			{
 				messages.remove(i);
 			}
 		}
@@ -386,33 +412,38 @@ public class GameModel
 		return ret;
 	}
 
-	public void updateScore(ScorePacket packet) {
+	public void updateScore(ScorePacket packet)
+	{
 		this.scores.put(packet.getPlayerID(), packet.getScore());
 	}
 
-	public List<String> getScores() {
+	public List<String> getScores()
+	{
 		List<String> ret = new ArrayList<String>();
 		List<String> used = new ArrayList<String>();
 
-		for (int i = 0; i < scores.size(); i++) {
+		for (int i = 0; i < scores.size(); i++)
+		{
 			String greatestKillsName = "";
 			KDTuple greatestScore = null;
-			
+
 			// Locate the greatest scorer so far
-			for (String name: scores.keySet()) {
+			for (String name : scores.keySet())
+			{
 				if (used.contains(name))
 					continue;
-				
+
 				KDTuple score = scores.get(name);
-				if (greatestScore == null || score.kills() > greatestScore.kills()) {
+				if (greatestScore == null || score.kills() > greatestScore.kills())
+				{
 					greatestKillsName = name;
 					greatestScore = score;
 				}
 			}
-			
-			StringBuilder b = new StringBuilder().append(greatestScore.kills()/3)
+
+			StringBuilder b = new StringBuilder().append(greatestScore.kills() / 3)
 					.append("/")
-					.append(greatestScore.deaths()/3)
+					.append(greatestScore.deaths() / 3)
 					.append("-")
 					.append(greatestKillsName);
 

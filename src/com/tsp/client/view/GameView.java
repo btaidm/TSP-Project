@@ -1,13 +1,5 @@
 package com.tsp.client.view;
 
-import java.awt.Point;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.googlecode.blacken.colors.ColorNames;
 import com.googlecode.blacken.colors.ColorPalette;
 import com.googlecode.blacken.swing.SwingTerminal;
@@ -23,11 +15,14 @@ import com.tsp.client.model.GameModel;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.actors.Player;
 import com.tsp.game.map.Point3D;
-import com.tsp.packets.ActorPacket;
-import com.tsp.packets.ActorUpdate;
-import com.tsp.packets.MessagePacket;
-import com.tsp.packets.Packet;
-import com.tsp.packets.ScorePacket;
+import com.tsp.packets.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.awt.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GameView implements Listenable
 {
@@ -53,6 +48,7 @@ public class GameView implements Listenable
 	private boolean playing = true;
 	private boolean initStuff = true;
 	private boolean kdfeed = true;
+	private long actorMovingTimeStart;
 
 	public GameView(GameModel model, TCPClient tcpClient) throws InterruptedException
 	{
@@ -67,6 +63,7 @@ public class GameView implements Listenable
 	{
 
 		(tcpClient = new TCPClient(this.model, tcpClient.getAddr(), tcpClient.getPort())).start();
+		fireEvent(EventType.TURN_INIT, new HashMap<String, Object>());
 		model.setQuit(false);
 		model.setReady(false);
 		while (!model.getReady() && !model.getQuit())
@@ -400,6 +397,13 @@ public class GameView implements Listenable
 			movement.put("Y", moveDelta.getY());
 			movement.put("Z", moveDelta.getZ());
 			fireEvent(EventType.TURN_MOVE, movement);
+			model.setMoving(true);
+			actorMovingTimeStart = System.currentTimeMillis();
+		}
+		else
+		{
+			if(model.Moving() && System.currentTimeMillis() - actorMovingTimeStart > 250)
+				model.setMoving(false);
 		}
 		if (attacked)
 		{

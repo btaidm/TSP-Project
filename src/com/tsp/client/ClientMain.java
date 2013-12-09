@@ -1,9 +1,6 @@
 package com.tsp.client;
 
-import com.tsp.client.controller.ConnectionController;
-import com.tsp.client.controller.GameController;
-import com.tsp.client.controller.TCPClient;
-import com.tsp.client.controller.StartupController;
+import com.tsp.client.controller.*;
 import com.tsp.client.model.GameModel;
 import com.tsp.client.view.GameView;
 import com.tsp.client.view.StartupView;
@@ -12,7 +9,6 @@ import com.tsp.server.controller.UDP.UDPServer;
 import com.tsp.server.model.ServerModel;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 
 
 public class ClientMain
@@ -83,10 +79,13 @@ public class ClientMain
 		}
 		GameController gc = new GameController();
 		ConnectionController cc = new ConnectionController(sc.getServer());
-
+		UDPClient udpClient = cc.createUDPListener();
+		udpClient.setModel(gm);
+		udpClient.start();
 		gv.addListener(gc);
 		gv.addListener(cc);
 		gv.play();
+		udpClient.quit();
 		if(server != null)
 		{
 			serverModel.quit();

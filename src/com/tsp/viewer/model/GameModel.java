@@ -7,7 +7,6 @@ import com.tsp.game.map.Point3D;
 import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.Packet;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;

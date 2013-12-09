@@ -2,7 +2,6 @@ package com.tsp.server.controller.UDP;
 
 import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
@@ -12,6 +11,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.DatagramChannel;
 import java.nio.charset.Charset;
 
 /**
@@ -24,55 +27,55 @@ import java.nio.charset.Charset;
 public class RespondWorker implements Runnable
 {
 
-	DatagramSocket socket = null;
-	DatagramPacket packet = null;
+	DatagramChannel socket = null;
+	//DatagramPacket packet = null;
+	InetSocketAddress address = null;
+	ByteBuffer data = null;
 	ServerModel model = null;
 
-	public RespondWorker(DatagramSocket socket, DatagramPacket packet, ServerModel model)
+	private ByteBuffer clone(ByteBuffer org)
+	{
+		ByteBuffer clone = ByteBuffer.allocate(org.capacity());
+		org.rewind();
+		clone.put(org);
+		org.rewind();
+		clone.flip();
+		return clone;
+	}
+
+	public RespondWorker(DatagramChannel socket, ByteBuffer packet, InetSocketAddress address, ServerModel model)
 	{
 		this.socket = socket;
-		this.packet = packet;
+		this.data = clone(packet);
 		this.model = model;
+		this.address = address;
 	}
 
 	public void run()
 	{
-		process();
+		if (data.capacity() > 1)
+			process();
 	}
 
 	private byte[] process()
 	{
-		byte[] data = packet.getData();
-		InputStreamReader input = new InputStreamReader(
-				new ByteArrayInputStream(data), Charset.forName("UTF-8"));
 
-		StringBuilder str = new StringBuilder();
-		try
-		{
-			for (int value; (value = input.read()) != -1; )
-				str.append((char) value);
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		CharBuffer charBuffer = Charset.defaultCharset().decode(data);
+
+
 		Object parsedObject = null;
 		try
 		{
-			parsedObject = JSONValue.parseWithException(str.toString().trim());
-				if (parsedObject instanceof JSONObject)
-				{
-					Packet packet1 = Packet.parseJSONObject((JSONObject) parsedObject);
-					model.processPacket(packet1);
-				}
+			parsedObject = JSONValue.parseWithException(charBuffer.toString().trim());
+			if (parsedObject instanceof JSONObject)
+			{
+				Packet packet1 = Packet.parseJSONObject((JSONObject) parsedObject);
+				model.processPacket(packet1);
+			}
 		}
 		catch (ParseException e)
 		{
 			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-		}
-		for (int i = 0; i < data.length; i++)
-		{
-			data[i] = 0;
 		}
 
 

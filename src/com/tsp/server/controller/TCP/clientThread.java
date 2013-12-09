@@ -1,5 +1,15 @@
 package com.tsp.server.controller.TCP;
 
+import com.tsp.game.actors.Actor;
+import com.tsp.packets.ActorPacket;
+import com.tsp.packets.Packet;
+import com.tsp.server.model.ServerModel;
+import com.tsp.util.SocketIO;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -7,21 +17,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Queue;
-
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.tsp.game.actors.Actor;
-import com.tsp.packets.ActorPacket;
-import com.tsp.packets.Packet;
-import com.tsp.packets.ScorePacket;
-import com.tsp.server.model.ServerModel;
-import com.tsp.util.KDTuple;
-import com.tsp.util.SocketIO;
 
 /**
  * Created with IntelliJ IDEA. User: Tim Date: 10/19/13 Time: 1:37 PM To change

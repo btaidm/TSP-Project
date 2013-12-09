@@ -1,11 +1,8 @@
 package com.tsp.game.actors;
 
-import java.awt.Point;
-
+import com.tsp.game.map.Point3D;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
-
-import com.tsp.game.map.Point3D;
 
 /**
  * The Actor Superclass that all {@link Player} and {@link AI} are based on

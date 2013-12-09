@@ -1,12 +1,13 @@
 package com.tsp.server.controller.UDP;
 
+import com.tsp.packets.Packet;
 import com.tsp.server.model.ServerModel;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.util.ArrayList;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,8 +18,12 @@ import java.net.SocketException;
  */
 public class UDPServer extends Thread
 {
-	private static boolean quit =false;
+	private static boolean quit = false;
+	private static ByteBuffer sendBuf = ByteBuffer.allocate(1024);
+	private static DatagramChannel serverChannel = null;
+
 	ServerModel model;
+	private static ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
 
 	public UDPServer(ServerModel serverModel)
 	{
@@ -29,16 +34,21 @@ public class UDPServer extends Thread
 	@Override
 	public void run()
 	{
-		DatagramSocket serverSocket = null;
+		//DatagramSocket serverSocket = null;
 		try
 		{
-			serverSocket = new DatagramSocket(12000);
-			while(!quit)
+			//serverSocket = new DatagramSocket(12000);
+			(serverChannel = DatagramChannel.open()).socket().bind(new InetSocketAddress(12000));
+			while (!quit)
 			{
-				byte[] receiveData = new byte[1024];
-				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-				serverSocket.receive(receivePacket);
-				new Thread(new RespondWorker(serverSocket, receivePacket, model)).start();
+				//byte[] receiveData = new byte[1024];
+				//DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+				ByteBuffer recBuf = ByteBuffer.allocate(1024);
+				recBuf.clear();
+				//serverSocket.receive(receivePacket);
+				InetSocketAddress receiveAddr = (InetSocketAddress) serverChannel.receive(recBuf);
+				if (!addresses.contains(receiveAddr)) addresses.add(receiveAddr);
+				new Thread(new RespondWorker(serverChannel, recBuf, receiveAddr, model)).start();
 				Thread.sleep(50);
 			}
 		}
@@ -56,8 +66,15 @@ public class UDPServer extends Thread
 		}
 		finally
 		{
-			if(serverSocket != null && serverSocket.isBound())
-				serverSocket.close();
+			if (serverChannel != null && serverChannel.isOpen())
+				try
+				{
+					serverChannel.close();
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
 		}
 	}
 
@@ -66,4 +83,21 @@ public class UDPServer extends Thread
 		quit = true;
 	}
 
+	public static void sendPacket(Packet e)
+	{
+		for (InetSocketAddress addr : addresses)
+		{
+			sendBuf.clear();
+			sendBuf.put(e.toJSONString().getBytes());
+			sendBuf.flip();
+
+			try
+			{
+				serverChannel.send(sendBuf, addr);
+			}
+			catch (IOException ex)
+			{
+			}
+		}
+	}
 }

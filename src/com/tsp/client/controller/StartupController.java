@@ -1,13 +1,13 @@
 package com.tsp.client.controller;
 
+import com.tsp.client.view.AboutView;
+import com.tsp.client.view.HelpView;
+import com.tsp.client.view.StartupView;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-
-import com.tsp.client.view.AboutView;
-import com.tsp.client.view.HelpView;
-import com.tsp.client.view.StartupView;
 
 public class StartupController implements ActionListener, MouseListener {
 

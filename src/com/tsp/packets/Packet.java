@@ -1,14 +1,13 @@
 package com.tsp.packets;
 
-import java.util.Collection;
-
-import org.json.simple.JSONAware;
-import org.json.simple.JSONObject;
-
 import com.tsp.game.actors.Actor;
 import com.tsp.game.actors.Player;
 import com.tsp.game.map.Point3D;
 import com.tsp.util.KDTuple;
+import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
+
+import java.util.Collection;
 
 /**
  * Created with IntelliJ IDEA.

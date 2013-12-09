@@ -3,7 +3,10 @@ package com.tsp.game.map;
 import com.tsp.game.actors.Actor;
 import com.tsp.game.actors.Player;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Random;
 
 /**
  * Created with IntelliJ IDEA.

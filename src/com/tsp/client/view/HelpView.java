@@ -1,13 +1,9 @@
 package com.tsp.client.view;
 
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JTextArea;
-
 import com.tsp.client.controller.StartupController;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class HelpView extends JFrame {
 

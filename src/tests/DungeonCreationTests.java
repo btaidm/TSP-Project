@@ -1,10 +1,9 @@
 package tests;
 
-import static org.junit.Assert.*;
-
+import com.tsp.game.map.Dungeon;
 import org.junit.Test;
 
-import com.tsp.game.map.Dungeon;
+import static org.junit.Assert.*;
 
 public class DungeonCreationTests {
 

@@ -6,12 +6,13 @@ import com.tsp.packets.ActorUpdate;
 import com.tsp.packets.AttackPacket;
 import com.tsp.packets.MovementPacket;
 import com.tsp.packets.Packet;
-import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -30,9 +31,11 @@ public class ConnectionController implements GameListener
 	 */
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionController.class);
 	ArrayList<Packet> packets;
-	private DatagramSocket socket;
+	private DatagramChannel socket;
 	InetAddress addr;
 	int port = 12000;
+	ByteBuffer sendBuf = ByteBuffer.allocate(1024);
+	ByteBuffer recBuf = ByteBuffer.allocate(1024);
 
 	/**
 	 * Creates a new Connection Controller with the default network address of the localhost
@@ -45,12 +48,17 @@ public class ConnectionController implements GameListener
 		addr = InetAddress.getLocalHost();
 		try
 		{
-			socket = new DatagramSocket();
+			socket = DatagramChannel.open();
+			socket.socket().bind(new InetSocketAddress(0));
 		}
 		catch (SocketException e)
 		{
 			LOGGER.error("{}", e);
 			socket = null;
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -66,12 +74,17 @@ public class ConnectionController implements GameListener
 		addr = address;
 		try
 		{
-			socket = new DatagramSocket();
+			socket = DatagramChannel.open();
+			socket.socket().bind(new InetSocketAddress(0));
 		}
 		catch (SocketException e)
 		{
 			LOGGER.error("{}", e);
 			socket = null;
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -87,12 +100,17 @@ public class ConnectionController implements GameListener
 		addr = InetAddress.getByName(hostname);
 		try
 		{
-			socket = new DatagramSocket();
+			socket = DatagramChannel.open();
+			socket.socket().bind(new InetSocketAddress(0));
 		}
 		catch (SocketException e)
 		{
 			LOGGER.error("{}", e);
 			socket = null;
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -110,13 +128,23 @@ public class ConnectionController implements GameListener
 		this.port = port;
 		try
 		{
-			socket = new DatagramSocket();
+			socket = DatagramChannel.open();
+			socket.socket().bind(new InetSocketAddress(0));
 		}
 		catch (SocketException e)
 		{
 			LOGGER.error("{}", e);
 			socket = null;
 		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public UDPClient createUDPListener()
+	{
+		return new UDPClient(socket);
 	}
 
 	/**
@@ -141,8 +169,26 @@ public class ConnectionController implements GameListener
 			case TURN_UPDATE:
 				processUpdate(e);
 				break;
+			case TURN_INIT:
+				processInit();
+				break;
 			default:
 				break;
+		}
+	}
+
+	private void processInit()
+	{
+		sendBuf.clear();
+		sendBuf.flip();
+
+		try
+		{
+			socket.send(sendBuf, new InetSocketAddress(addr, port));
+		}
+		catch (IOException e)
+		{
+			LOGGER.error("{}", e);
 		}
 	}
 
@@ -196,14 +242,13 @@ public class ConnectionController implements GameListener
 			if (socket != null)
 			{
 				LOGGER.info("Sending Packet @ {}: {}", System.currentTimeMillis(), packet);
-				byte[] data = packet.toJSONString().getBytes();
-				DatagramPacket response = new DatagramPacket(data,
-				                                             data.length,
-				                                             addr,
-				                                             12000);
+				sendBuf.clear();
+				sendBuf.put(packet.toJSONString().getBytes());
+				sendBuf.flip();
+
 				try
 				{
-					socket.send(response);
+					socket.send(sendBuf, new InetSocketAddress(addr, port));
 				}
 				catch (IOException e)
 				{

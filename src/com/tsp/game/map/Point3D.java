@@ -1,6 +1,6 @@
 package com.tsp.game.map;
 
-import java.awt.Point;
+import java.awt.*;
 
 public class Point3D extends Point
 {

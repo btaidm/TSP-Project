@@ -1,8 +1,7 @@
 package com.tsp.packets;
 
-import org.json.simple.JSONObject;
-
 import com.tsp.util.KDTuple;
+import org.json.simple.JSONObject;
 
 public class ScorePacket extends Packet {
 
